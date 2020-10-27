@@ -153,6 +153,10 @@ private:
     bool parse();
     std::uint64_t findSoundCommand(std::uint16_t cmdName) const;
     bool doBufferCommand(std::uint64_t command);
+
+    static void readSoundSampleData(std::istream& stream, std::vector<std::uint8_t>& buffer,
+        std::size_t sampleLength, unsigned bytesPerSample);
+
     std::unique_ptr<SoundSampleHeader> readSoundSampleHeader(std::uint16_t offset);
 
     friend std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs);

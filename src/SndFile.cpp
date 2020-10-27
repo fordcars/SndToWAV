@@ -78,10 +78,11 @@ std::ostream& operator<<(std::ostream& lhs, const ExtendedSoundSampleHeader& rhs
             std::endl <<
 
         " -- Marker chunk pointer: " << "0x" << std::setw(8) << rhs.markerChunk << std::endl <<
-        " -- Instrument chunks pointer: " << "0x" << std::setw(8) << rhs.instrumentChunks << std::endl <<
+        " -- Instrument chunks pointer: " << "0x" << std::setw(8) <<
+            rhs.instrumentChunks << std::endl <<
         " -- AES Recording pointer: " << "0x" << std::setw(8) <<rhs.AESRecording << std::endl <<
-        " -- Sample size: " << "0x" << std::setw(4) << rhs.sampleSize << std::endl <<
-        " -- Future use (1): " << "0x" << std::setw(4) << rhs.futureUse1 << std::endl <<
+        " -- Sample size: " << std::dec << rhs.sampleSize << std::endl <<
+        " -- Future use (1): " << "0x" << std::hex << std::setw(4) << rhs.futureUse1 << std::endl <<
         " -- Future use (2): " << "0x" << std::setw(8) << rhs.futureUse2 << std::endl <<
         " -- Future use (3): " << "0x" << std::setw(8) << rhs.futureUse3 << std::endl <<
         " -- Future use (4): " << "0x" << std::setw(8) << rhs.futureUse4;
@@ -109,9 +110,9 @@ std::ostream& operator<<(std::ostream& lhs, const CompressedSoundSampleHeader& r
         " -- Future use (2): " << "0x" << std::setw(8) <<rhs.futureUse2 << std::endl <<
         " -- State vars pointer: " << "0x" << std::setw(8) <<rhs.stateVars << std::endl <<
         " -- Leftover samples pointer: " << "0x" << std::setw(8) << rhs.leftOverSamples << std::endl <<
-        " -- Compression ID: " << "0x" << std::setw(4) << rhs.compressionID << std::endl <<
+        " -- Compression ID: " << std::dec << rhs.compressionID << std::endl <<
 
-        " -- Packet size: " << std::dec << rhs.packetSize << std::endl <<
+        " -- Packet size: " << rhs.packetSize << std::endl <<
         " -- Snth ID: " << "0x" << std::setw(4) <<
             std::hex << rhs.snthID << std::endl <<
         " -- Sample size: " << std::dec << rhs.sampleSize;
@@ -250,6 +251,28 @@ const SoundSampleHeader& SndFile::getSoundSampleHeader() const
     return *mSoundSampleHeader;
 }
 
+// Static.
+// Reads sound sample data from current position in stream.
+void SndFile::readSoundSampleData(std::istream& stream, std::vector<std::uint8_t>& buffer,
+        std::size_t sampleLength, unsigned bytesPerSample)
+{
+    // In bytes, since we are always dealing with a uint8_t vector.
+    buffer.resize(sampleLength);
+
+    // Snd only supports 8-bit or 16-bit samples (I think).
+    if(bytesPerSample == 1)
+    {
+        readBigArray(stream, buffer.data(), sampleLength);
+    } else if(bytesPerSample == 2)
+    {
+        // If we have 2 bytes per sample, we must make sure we convert
+        // them to native endianness!
+        readBigArray(stream,
+            reinterpret_cast<std::uint16_t*>(buffer.data()),
+            sampleLength / bytesPerSample);
+    }
+}
+
 // Offset from beginning of file, must be in native endianness.
 std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t offset)
 {
@@ -264,12 +287,19 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
     standardHeader->encode = readBigValue<decltype(standardHeader->encode)>(mFile);
     standardHeader->baseFrequency = readBigValue<decltype(standardHeader->baseFrequency)>(mFile);
 
+    // Checks
+    if(standardHeader->samplePtr != 0)
+    {
+        std::cerr << "Error: sound sample data pointer is not null! Cannot read data." <<
+            std::endl;
+        return standardHeader;
+    }
+
     if(standardHeader->encode == cStandardSoundHeaderEncode)
     {
-        // Copy sample data.
-        standardHeader->samples.resize(standardHeader->lengthOrChannels);
-        // Byte order is conserved.
-        mFile.read(reinterpret_cast<char*>(standardHeader->samples.data()), standardHeader->lengthOrChannels);
+        // Standard sound files always have 1 byte/sample.
+        readSoundSampleData(mFile, standardHeader->samples,
+            standardHeader->lengthOrChannels, 1);
 
         // Debugging info.
         std::cout << *standardHeader << std::endl;
@@ -298,10 +328,14 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         extendedHeader->futureUse4 = readBigValue<decltype(extendedHeader->futureUse4)>(mFile);
 
         // Copy sample data.
-        // Length = numFrames * number of channels (lengthOrChannels)
-        extendedHeader->samples.resize(extendedHeader->numFrames * extendedHeader->lengthOrChannels);
-        mFile.read(reinterpret_cast<char*>(extendedHeader->samples.data()),
-                extendedHeader->numFrames * extendedHeader->lengthOrChannels);
+        // Length (bytes) = numFrames * sampleSize/8 * number of channels (lengthOrChannels)
+        std::size_t sampleLength =
+            extendedHeader->numFrames *
+            extendedHeader->sampleSize/8 *
+            extendedHeader->lengthOrChannels;
+
+        readSoundSampleData(mFile, extendedHeader->samples, sampleLength,
+            extendedHeader->sampleSize/8);
 
         // Debug info.
         std::cout << *extendedHeader << std::endl;
@@ -332,9 +366,12 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
 
         // Copy sample data.
         // Length = numFrames * number of channels (lengthOrChannels)
-        compressedHeader->samples.resize(compressedHeader->numFrames * compressedHeader->lengthOrChannels);
-        mFile.read(reinterpret_cast<char*>(compressedHeader->samples.data()),
-                compressedHeader->numFrames * compressedHeader->lengthOrChannels);
+        std::size_t sampleLength =
+            compressedHeader->numFrames *
+            compressedHeader->lengthOrChannels;
+
+        readSoundSampleData(mFile, compressedHeader->samples, sampleLength,
+            compressedHeader->sampleSize/8);
 
         // Debug info.
         std::cout << *compressedHeader << std::endl;

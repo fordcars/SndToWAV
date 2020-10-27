@@ -28,6 +28,7 @@ class SndFile;
 class WAVHeader
 {
 public:
+    // http://soundfile.sapp.org/doc/WaveFormat/
     std::uint8_t chunkID[4] = {'R','I','F','F'};
     std::uint32_t chunkSize = 0;
     std::uint8_t format[4] = {'W','A','V','E'};

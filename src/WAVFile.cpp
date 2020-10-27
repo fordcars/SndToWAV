@@ -98,7 +98,8 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
     if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode)
     {
         mHeader.numChannels = 1; // Only mono supported.
-    } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode || sndHeader.encode == SndFile::cCompressedSoundHeaderEncode )
+    } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode ||
+        sndHeader.encode == SndFile::cCompressedSoundHeaderEncode )
     {
         mHeader.numChannels = sndHeader.lengthOrChannels;
     }
@@ -109,19 +110,21 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
 
     unsigned bitsPerSample = 0;
 
-    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode ||
-        sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
+    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode)
     {
         // For standard sound headers, samples are always 8-bit.
-        // For extended sound samples, sampes are generally 8-bit, but
-        // *can* be 16-bit. However, it seems that the extended header
-        // has no way of specifying bit-depth :( So here, we'll just
-        // always assume 8-bit depth.
         bitsPerSample = 8;
+    } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
+    {
+        bitsPerSample = extSndHeader->sampleSize;
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
-        // Compressed headers does specify bit-depth (8 or 16 bit).
-        bitsPerSample = cmpSndHeader->packetSize;
+        // If == 0, we are supposed to guess the packet size :(
+        if(cmpSndHeader->packetSize == 0)
+            // Normally 16-bit, but not always! This may fail.
+            bitsPerSample = 16;
+        else
+            bitsPerSample = cmpSndHeader->packetSize;
     }
 
     mHeader.byteRate = mHeader.sampleRate * mHeader.numChannels * bitsPerSample/8;
@@ -160,10 +163,22 @@ void WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile
 {
     const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
 
-    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode)
+    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode ||
+        sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
     {
-        writeLittleArray(outputStream, sndHeader.samples.data(),
-            sndHeader.samples.size());
+        // Snd only supports 8-bit or 16-bit samples (I think).
+        unsigned bytesPerSample = mHeader.bitsPerSample/8;
+        if(bytesPerSample == 1)
+        {
+            writeLittleArray(outputStream, sndHeader.samples.data(),
+                sndHeader.samples.size());
+        } else if(bytesPerSample == 2)
+        {
+            // If we have 2 bytes/sample, we have to make sure each sample is in little-endian!
+            writeLittleArray(outputStream,
+                reinterpret_cast<const std::uint16_t*>(sndHeader.samples.data()),
+                sndHeader.samples.size() / bytesPerSample);
+        }
     }
 }
 
