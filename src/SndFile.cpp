@@ -23,13 +23,17 @@ const unsigned BUFFER_CMD = 0x8051; // bufferCmd with data offset bit.
 
 namespace
 {
-    // sampleRate is a 32-bit fixed-point sample rate:
+    // sampleRate is an unsigned 32-bit fixed-point sample rate:
     // the 16 MSbs are left of the point, and the 16 LSbs are right of the point.
     float fixedSampleRateToFloat(std::uint32_t sampleRate)
     {
         return sampleRate / (16.0f*16.0f*16.0f*16.0f);
     }
 }
+
+const unsigned char SndFile::cStandardSoundHeaderEncode = 0x00;
+const unsigned char SndFile::cExtendedSoundHeaderEncode = 0xFF;
+const unsigned char SndFile::cCompressedSoundHeaderEncode = 0xFE;
 
 std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs)
 {
@@ -257,7 +261,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
     standardHeader->encode = readValueFromFile<decltype(standardHeader->encode)>(mFile);
     standardHeader->baseFrequency = readValueFromFile<decltype(standardHeader->baseFrequency)>(mFile);
 
-    if(standardHeader->encode == 0x00)
+    if(standardHeader->encode == cStandardSoundHeaderEncode)
     {
         // Copy sample data.
         standardHeader->samples.resize(standardHeader->lengthOrChannels);
@@ -269,7 +273,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
 
         // Return standard header.
         return standardHeader;
-    } else if(standardHeader->encode == 0xff)
+    } else if(standardHeader->encode == cExtendedSoundHeaderEncode)
     {
         // Extended sound header.
         // Copy values already read:
@@ -301,7 +305,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
 
         // Return extended header.
         return extendedHeader;
-    } else if(standardHeader->encode == 0xfe)
+    } else if(standardHeader->encode == cCompressedSoundHeaderEncode)
     {
         // Compressed sound header
         // Copy values already read:
@@ -336,7 +340,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         return compressedHeader;
     }
 
-    std::cerr << "Error: invalid sound sampler header encoding! Cannot convert." <<
+    std::cerr << "Error: unrecognized sound sampler header encoding! Cannot convert." <<
         std::endl;
     return std::unique_ptr<SoundSampleHeader>(new SoundSampleHeader());
 }

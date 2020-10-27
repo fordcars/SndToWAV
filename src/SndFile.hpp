@@ -55,6 +55,8 @@ public:
     std::int32_t numFrames = 0;
     // 80-bit extended value.
     // Array ordered in big-endian, but each cell is in native endianness.
+    // AIFFSampleRate is essentially the same value as the standard header
+    // sampleRate.
     std::uint32_t AIFFSampleRate[2] = {0};
     std::uint32_t markerChunk = 0;
     std::uint32_t instrumentChunks = 0;
@@ -78,6 +80,8 @@ public:
     std::int32_t numFrames = 0;
     // 80-bit extended value.
     // Array ordered in big-endian, but each cell is in native endianness.
+    // AIFFSampleRate is essentially the same value as the standard header
+    // sampleRate.
     std::uint32_t AIFFSampleRate[2] = {0};
     std::uint32_t markerChunk = 0;
     std::uint32_t format = 0;
@@ -139,6 +143,10 @@ private:
     friend std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs);
 
 public:
+    static const unsigned char cStandardSoundHeaderEncode;
+    static const unsigned char cExtendedSoundHeaderEncode;
+    static const unsigned char cCompressedSoundHeaderEncode;
+
     SndFile();
     SndFile(const std::string& sndFileName);
 

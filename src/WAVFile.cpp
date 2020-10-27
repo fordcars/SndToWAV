@@ -19,6 +19,8 @@
 #include "SndFile.hpp"
 
 #include <iomanip>
+#include <iostream>
+#include <cstddef> // For std::size_t
 
 std::ostream& operator<<(std::ostream& lhs, const WAVHeader& rhs)
 {
@@ -63,6 +65,57 @@ WAVFile::WAVFile(const SndFile& sndFile, const std::string& WAVFileName)
 // Returns true on success, false on failure.
 bool WAVFile::populateHeader(const SndFile& sndFile)
 {
+    // Could definitely do this cleaner.
+    const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
+    const ExtendedSoundSampleHeader* extSndHeader = nullptr;
+    const CompressedSoundSampleHeader* cmpSndHeader = nullptr;
+
+    if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
+    {
+        extSndHeader = static_cast<const ExtendedSoundSampleHeader*>(&sndHeader);
+    } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
+    {
+        cmpSndHeader = static_cast<const CompressedSoundSampleHeader*>(&sndHeader);
+    }
+
+    std::size_t sampleDataSize = 0;
+    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode)
+    {
+        sampleDataSize = sndHeader.lengthOrChannels;
+    } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
+    {
+        sampleDataSize = extSndHeader->numFrames * 2 * sndHeader.lengthOrChannels;
+    } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
+    {
+        sampleDataSize = cmpSndHeader->numFrames * 128 * sndHeader.lengthOrChannels;
+    }
+
+    mHeader.chunkSize = 36 + sampleDataSize;
+
+    // "fmt " //
+    mHeader.subchunk1Size = 16;
+    mHeader.audioFormat = 1; // For PCM
+
+    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode)
+    {
+        mHeader.numChannels = 1; // Only mono supported.
+    } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode || sndHeader.encode == SndFile::cCompressedSoundHeaderEncode )
+    {
+        mHeader.numChannels = sndHeader.lengthOrChannels;
+    }
+
+    // Snd sample rate is an unsigned 32-bit fixed-point.
+    // We only keep the integer part!
+    mHeader.sampleRate = sndHeader.sampleRate >> 16;
+
+    unsigned bitsPerSample = 16;
+    mHeader.byteRate = mHeader.sampleRate * mHeader.numChannels * bitsPerSample/8;
+    mHeader.blockAlign = mHeader.numChannels * bitsPerSample/8;
+    mHeader.bitsPerSample = bitsPerSample;
+
+    // "data" //
+    mHeader.subchunk2Size = sampleDataSize;
+
     // Debug info.
     std::cout << mHeader << std::endl;
 }
