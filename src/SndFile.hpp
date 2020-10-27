@@ -22,6 +22,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint> // Fixed-width types
+#include <cstddef> // For std::size_t
 #include <vector>
 #include <memory>
 
@@ -84,7 +85,7 @@ public:
     // sampleRate.
     std::uint32_t AIFFSampleRate[2] = {0};
     std::uint32_t markerChunk = 0;
-    std::uint32_t format = 0;
+    char format[4] = {0}; // 4-char string.
     std::int32_t futureUse2 = 0;
     std::uint32_t stateVars = 0;
     std::uint32_t leftOverSamples = 0;
@@ -101,7 +102,7 @@ class SndFile
 {
 private:
 
-    // Converts from big-endian to little-endian.
+    // Safe endian.
     template<class T>
     static T readValueFromFile(std::ifstream& file)
     {
@@ -110,15 +111,26 @@ private:
         return SndToWAV::makeSafeEndian(readValue);
     }
 
-    // Converts from big-endian to little-endian.
-    // Only reads length bytes, fills rest with 0.
+    // Safe endian.
+    // Only reads length bytes, fills rest (LSBs) with 0s.
     template<class T>
     static T readValueFromFile(std::ifstream& file, std::size_t length)
     {
         T readValue = 0; // Will with 0s.
-        // Fill data in the LSBs.
+        // Fill data in the LSBs (little-endian).
         file.read(reinterpret_cast<char*>(&readValue) + (sizeof(T)-length), length);
         return SndToWAV::makeSafeEndian(readValue);
+    }
+
+    // Safe endian.
+    template<class T>
+    static void readArrayFromFile(std::ifstream& file, T* buffer, std::size_t length)
+    {
+        for(std::size_t i = 0; i < length; ++i)
+        {
+            file.read(reinterpret_cast<char*>(&buffer[i]), sizeof(T));
+            buffer[i] = SndToWAV::makeSafeEndian(buffer[i]);
+        }
     }
 
     std::string mFileName;

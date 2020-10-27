@@ -99,13 +99,13 @@ std::ostream& operator<<(std::ostream& lhs, const CompressedSoundSampleHeader& r
     lhs << "Compressed sound sample header (0xfe): " << std::endl <<
         " -- Number of frames: " << rhs.numFrames << std::endl <<
 
-        // Array in big-endian!
+        // Array in big-endian
         " -- AIFFSampleRate: " << "0x" << std::hex << std::setw(4) <<rhs.AIFFSampleRate[0] <<
             std::setw(8) << rhs.AIFFSampleRate[1] << std::setw(8) << rhs.AIFFSampleRate[2] <<
             std::endl <<
 
         " -- Marker chunk pointer: " << "0x" << std::setw(8) << rhs.markerChunk << std::endl <<
-        " -- Format: " << "0x" << std::setw(8) << rhs.format << std::endl <<
+        " -- Format: " << std::string(reinterpret_cast<const char*>(rhs.format), 4) << std::endl <<
         " -- Future use (2): " << "0x" << std::setw(8) <<rhs.futureUse2 << std::endl <<
         " -- State vars pointer: " << "0x" << std::setw(8) <<rhs.stateVars << std::endl <<
         " -- Leftover samples pointer: " << "0x" << std::setw(8) << rhs.leftOverSamples << std::endl <<
@@ -318,7 +318,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         compressedHeader->AIFFSampleRate[1] = readValueFromFile<std::uint32_t>(mFile);
         compressedHeader->AIFFSampleRate[2] = readValueFromFile<std::uint32_t>(mFile);
         compressedHeader->markerChunk = readValueFromFile<decltype(compressedHeader->markerChunk)>(mFile);
-        compressedHeader->format = readValueFromFile<decltype(compressedHeader->format)>(mFile);
+        readArrayFromFile<char>(mFile, compressedHeader->format, 4);
         compressedHeader->futureUse2 = readValueFromFile<decltype(compressedHeader->futureUse2)>(mFile);
         compressedHeader->stateVars = readValueFromFile<decltype(compressedHeader->stateVars)>(mFile);
         compressedHeader->leftOverSamples = readValueFromFile<decltype(compressedHeader->leftOverSamples)>(mFile);
