@@ -22,6 +22,8 @@
 #include <string>
 #include <cstdint> // Fixed-width types
 
+#include "SndToWAV.hpp"
+
 class SndFile;
 class WAVHeader
 {
@@ -48,9 +50,43 @@ public:
 class WAVFile
 {
 private:
+    // Safe endian.
+    // littleStream is a little-endian output stream.
+    template<class T>
+    static void writeLittleValue(std::ostream& littleStream, T value)
+    {
+        T little = SndToWAV::safeLittleEndian(value);
+        littleStream.write(reinterpret_cast<const char*>(&little), sizeof(T));
+    }
+
+    // Safe endian.
+    // littleStream is a little-endian output stream.
+    // Only writes length of bytes (LSBs of value).
+    template<class T>
+    static T writeLittleValue(std::ostream& littleStream, T value, std::size_t length)
+    {
+        T little = SndToWAV::safeLittleEndian(value);
+        
+        littleStream.write(reinterpret_cast<const char*>(&little), length);
+    }
+
+    // Safe endian.
+    // littleStream is a little-endian output stream.
+    template<class T>
+    static void writeLittleArray(std::ostream& littleStream, T* values, std::size_t length)
+    {
+        for(std::size_t i = 0; i < length; ++i)
+        {
+            T little = SndToWAV::safeLittleEndian(values[i]);
+            littleStream.write(reinterpret_cast<const char*>(&little), sizeof(T));
+        }
+    }
+
     WAVHeader mHeader;
 
     bool populateHeader(const SndFile& sndFile);
+    void writeBinaryHeader(std::ostream& outputStream) const;
+    void writeSampleData(std::ostream& outputStream, const SndFile& sndFile) const;
 
 public:
     WAVFile();

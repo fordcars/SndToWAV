@@ -58,14 +58,48 @@ private:
     }
 
 public:
-    // u is big-endian value.
+    // Converts Big-endian to native-endian.
     template<class T>
-    static T makeSafeEndian(T u)
+    static T makeBigEndianNative(T big)
     {
         if(mMachineIsLittleEndian)
-            return swapEndian(u);
+            return swapEndian(big);
         else
-            return u;
+            return big;
+    }
+
+    // Converts little-endian to native-endian.
+    template<class T>
+    static T makeLittleEndianNative(T little)
+    {
+        if(mMachineIsLittleEndian)
+            return little;
+        else
+            return swapEndian(little);
+    }
+
+    // Converts native-endian to Big-endian.
+    template<class T>
+    static T safeBigEndian(T nativeEndian)
+    {
+        if(mMachineIsLittleEndian)
+            // Make a Big-endian from our native little-endian.
+            return swapEndian(nativeEndian);
+        else
+            // Our native-endian is already Big-endian.
+            return nativeEndian;
+    }
+
+    // Converts native-endian to little-endian.
+    template<class T>
+    static T safeLittleEndian(T nativeEndian)
+    {
+        if(mMachineIsLittleEndian)
+            // Our native-endian is already little-endian.
+            return nativeEndian;
+        else
+            // Make a little-endian from our native Big-endian.
+            return swapEndian(nativeEndian);
     }
 
     SndToWAV();

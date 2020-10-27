@@ -52,6 +52,18 @@ bool SndToWAV::convert(const std::string& sndFileName, const std::string& wavFil
 {
     SndFile sndFile(sndFileName);
 	WAVFile wavFile;
+    bool success = wavFile.convertSnd(sndFile, wavFileName);
 
-	return wavFile.convertSnd(sndFile, wavFileName);
+    if(success)
+    {
+        std::cout <<
+            std::endl << "Successfully converted '" + sndFileName + "' to '" +
+            wavFileName + "'!" << std::endl;
+        return true;
+    }
+
+    std::cerr <<
+        std::endl << "Error: failed to convert '" + sndFileName + "' to '" +
+        wavFileName + "'!" << std::endl;
+    return false;
 }

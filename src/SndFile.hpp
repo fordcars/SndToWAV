@@ -41,7 +41,7 @@ public:
     std::uint8_t encode = 0;
     std::uint8_t baseFrequency = 0;
 
-    std::vector<std::uint8_t> samples;
+    std::vector<std::uint8_t> samples; // This is "in the header" according to docs...
 
     friend std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs);
 };
@@ -103,33 +103,36 @@ class SndFile
 private:
 
     // Safe endian.
+    // bigStream is a Big-endian input stream.
     template<class T>
-    static T readValueFromFile(std::ifstream& file)
+    static T readBigValue(std::istream& bigStream)
     {
-        T readValue;
-        file.read(reinterpret_cast<char*>(&readValue), sizeof(T));
-        return SndToWAV::makeSafeEndian(readValue);
+        T readBigValue;
+        bigStream.read(reinterpret_cast<char*>(&readBigValue), sizeof(T));
+        return SndToWAV::makeBigEndianNative(readBigValue);
     }
 
     // Safe endian.
-    // Only reads length bytes, fills rest (LSBs) with 0s.
+    // bigStream is a Big-endian input stream.
+    // Only reads length bytes as LSBs, fills rest (MSBs) with 0s.
     template<class T>
-    static T readValueFromFile(std::ifstream& file, std::size_t length)
+    static T readBigValue(std::istream& bigStream, std::size_t length)
     {
-        T readValue = 0; // Will with 0s.
-        // Fill data in the LSBs (little-endian).
-        file.read(reinterpret_cast<char*>(&readValue) + (sizeof(T)-length), length);
-        return SndToWAV::makeSafeEndian(readValue);
+        T readBigValue = 0; // Will with 0s.
+        // Fill data in the LSBs of readValue (as Big-endian).
+        bigStream.read(reinterpret_cast<char*>(&readBigValue) + (sizeof(T)-length), length);
+        return SndToWAV::makeBigEndianNative(readBigValue);
     }
 
     // Safe endian.
+    // bigStream is a Big-endian input stream.
     template<class T>
-    static void readArrayFromFile(std::ifstream& file, T* buffer, std::size_t length)
+    static void readBigArray(std::istream& bigStream, T* buffer, std::size_t length)
     {
         for(std::size_t i = 0; i < length; ++i)
         {
-            file.read(reinterpret_cast<char*>(&buffer[i]), sizeof(T));
-            buffer[i] = SndToWAV::makeSafeEndian(buffer[i]);
+            bigStream.read(reinterpret_cast<char*>(&buffer[i]), sizeof(T));
+            buffer[i] = SndToWAV::makeBigEndianNative(buffer[i]);
         }
     }
 
@@ -148,7 +151,7 @@ private:
     std::vector<std::uint64_t> mSoundData; // Filled when interpreting bufferCmd.
 
     bool parse();
-    std::uint64_t findSoundCommand(std::uint16_t cmdName);
+    std::uint64_t findSoundCommand(std::uint16_t cmdName) const;
     bool doBufferCommand(std::uint64_t command);
     std::unique_ptr<SoundSampleHeader> readSoundSampleHeader(std::uint16_t offset);
 

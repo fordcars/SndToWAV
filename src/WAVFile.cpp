@@ -19,7 +19,6 @@
 #include "SndFile.hpp"
 
 #include <iomanip>
-#include <iostream>
 #include <cstddef> // For std::size_t
 
 std::ostream& operator<<(std::ostream& lhs, const WAVHeader& rhs)
@@ -108,7 +107,23 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
     // We only keep the integer part!
     mHeader.sampleRate = sndHeader.sampleRate >> 16;
 
-    unsigned bitsPerSample = 16;
+    unsigned bitsPerSample = 0;
+
+    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode ||
+        sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
+    {
+        // For standard sound headers, samples are always 8-bit.
+        // For extended sound samples, sampes are generally 8-bit, but
+        // *can* be 16-bit. However, it seems that the extended header
+        // has no way of specifying bit-depth :( So here, we'll just
+        // always assume 8-bit depth.
+        bitsPerSample = 8;
+    } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
+    {
+        // Compressed headers does specify bit-depth (8 or 16 bit).
+        bitsPerSample = cmpSndHeader->packetSize;
+    }
+
     mHeader.byteRate = mHeader.sampleRate * mHeader.numChannels * bitsPerSample/8;
     mHeader.blockAlign = mHeader.numChannels * bitsPerSample/8;
     mHeader.bitsPerSample = bitsPerSample;
@@ -118,6 +133,38 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
 
     // Debug info.
     std::cout << mHeader << std::endl;
+
+    return true;
+}
+
+void WAVFile::writeBinaryHeader(std::ostream& outputStream) const
+{
+    writeLittleArray(outputStream, mHeader.chunkID, 4);
+    writeLittleValue(outputStream, mHeader.chunkSize);
+    writeLittleArray(outputStream, mHeader.format, 4);
+
+    writeLittleArray(outputStream, mHeader.subchunk1ID, 4);
+    writeLittleValue(outputStream, mHeader.subchunk1Size);
+    writeLittleValue(outputStream, mHeader.audioFormat);
+    writeLittleValue(outputStream, mHeader.numChannels);
+    writeLittleValue(outputStream, mHeader.sampleRate);
+    writeLittleValue(outputStream, mHeader.byteRate);
+    writeLittleValue(outputStream, mHeader.blockAlign);
+    writeLittleValue(outputStream, mHeader.bitsPerSample);
+
+    writeLittleArray(outputStream, mHeader.subchunk2ID, 4);
+    writeLittleValue(outputStream, mHeader.subchunk2Size);
+}
+
+void WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile) const
+{
+    const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
+
+    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode)
+    {
+        writeLittleArray(outputStream, sndHeader.samples.data(),
+            sndHeader.samples.size());
+    }
 }
 
 // Returns true on success, false on failure.
@@ -125,4 +172,17 @@ bool WAVFile::convertSnd(const SndFile& sndFile, const std::string& WAVFileName)
 {
     if(!populateHeader(sndFile))
         return false; // Error messages already dealt with.
+
+    std::ofstream outputFile(WAVFileName, std::ofstream::out |
+            std::ofstream::binary | std::ofstream::trunc);
+
+    if(outputFile.fail())
+    {
+        std::cerr << "Error: could not open '" + WAVFileName + "' for writing!" <<
+            std::endl;
+        return false;
+    }
+
+    writeBinaryHeader(outputFile);
+    writeSampleData(outputFile, sndFile);
 }

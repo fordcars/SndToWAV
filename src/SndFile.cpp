@@ -144,8 +144,8 @@ bool SndFile::parse()
 
     mFile.seekg(0, mFile.beg);
 
-    mFormat = readValueFromFile<decltype(mFormat)>(mFile);
-    mNumDataFormats = readValueFromFile<decltype(mNumDataFormats)>(mFile);
+    mFormat = readBigValue<decltype(mFormat)>(mFile);
+    mNumDataFormats = readBigValue<decltype(mNumDataFormats)>(mFile);
     
     if(mNumDataFormats == 0)
     {
@@ -153,13 +153,13 @@ bool SndFile::parse()
         return false;
     }
 
-    mFirstDataFormatID = readValueFromFile<decltype(mFirstDataFormatID)>(mFile);
-    mInitOptionForChannel = readValueFromFile<decltype(mInitOptionForChannel)>(mFile);
-    mNumSoundCommands = readValueFromFile<decltype(mNumSoundCommands)>(mFile);
+    mFirstDataFormatID = readBigValue<decltype(mFirstDataFormatID)>(mFile);
+    mInitOptionForChannel = readBigValue<decltype(mInitOptionForChannel)>(mFile);
+    mNumSoundCommands = readBigValue<decltype(mNumSoundCommands)>(mFile);
 
     for(std::size_t i = 0; i < mNumSoundCommands; ++i)
     {
-        std::uint64_t command = readValueFromFile<decltype(command)>(mFile);
+        std::uint64_t command = readBigValue<decltype(command)>(mFile);
         mSoundCommands.push_back(command);
     }
 
@@ -170,6 +170,9 @@ bool SndFile::parse()
             "May not convert correctly. (Are you sure your 'snd ' file only contains " <<
             "a single sound sample?)" << std::endl;
     }
+
+    // Print our snd file info for debug.
+    std::cout << *this << std::endl;
 
     // Immediately interpret bufferCmd if present.
     // We only interpret the first bufferCmd, so watchout if there is more than one!
@@ -186,7 +189,7 @@ bool SndFile::parse()
 
 // Finds first instance of cmdName, and returns entire command.
 // Returns 0 on failure.
-std::uint64_t SndFile::findSoundCommand(std::uint16_t cmdName)
+std::uint64_t SndFile::findSoundCommand(std::uint16_t cmdName) const
 {
     for(std::uint64_t command : mSoundCommands)
     {
@@ -230,7 +233,7 @@ bool SndFile::doBufferCommand(std::uint64_t command)
 // Returns true on success, false on failure.
 bool SndFile::open(const std::string& sndFileName)
 {
-    mFile.open(sndFileName);
+    mFile.open(sndFileName, std::ifstream::in | std::ifstream::binary);
 
     if(mFile.fail())
     {
@@ -253,13 +256,13 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
     std::unique_ptr<SoundSampleHeader> standardHeader(new SoundSampleHeader());
     mFile.seekg(offset, mFile.beg);
 
-    standardHeader->samplePtr = readValueFromFile<decltype(standardHeader->samplePtr)>(mFile);
-    standardHeader->lengthOrChannels = readValueFromFile<decltype(standardHeader->lengthOrChannels)>(mFile);
-    standardHeader->sampleRate = readValueFromFile<decltype(standardHeader->sampleRate)>(mFile);
-    standardHeader->loopStart = readValueFromFile<decltype(standardHeader->loopStart)>(mFile);
-    standardHeader->loopEnd = readValueFromFile<decltype(standardHeader->loopEnd)>(mFile);
-    standardHeader->encode = readValueFromFile<decltype(standardHeader->encode)>(mFile);
-    standardHeader->baseFrequency = readValueFromFile<decltype(standardHeader->baseFrequency)>(mFile);
+    standardHeader->samplePtr = readBigValue<decltype(standardHeader->samplePtr)>(mFile);
+    standardHeader->lengthOrChannels = readBigValue<decltype(standardHeader->lengthOrChannels)>(mFile);
+    standardHeader->sampleRate = readBigValue<decltype(standardHeader->sampleRate)>(mFile);
+    standardHeader->loopStart = readBigValue<decltype(standardHeader->loopStart)>(mFile);
+    standardHeader->loopEnd = readBigValue<decltype(standardHeader->loopEnd)>(mFile);
+    standardHeader->encode = readBigValue<decltype(standardHeader->encode)>(mFile);
+    standardHeader->baseFrequency = readBigValue<decltype(standardHeader->baseFrequency)>(mFile);
 
     if(standardHeader->encode == cStandardSoundHeaderEncode)
     {
@@ -281,18 +284,18 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
             new ExtendedSoundSampleHeader(*standardHeader)
         );
 
-        extendedHeader->numFrames = readValueFromFile<decltype(extendedHeader->numFrames)>(mFile);
-        extendedHeader->AIFFSampleRate[0] = readValueFromFile<std::uint32_t>(mFile, 2);
-        extendedHeader->AIFFSampleRate[1] = readValueFromFile<std::uint32_t>(mFile);
-        extendedHeader->AIFFSampleRate[2] = readValueFromFile<std::uint32_t>(mFile);
-        extendedHeader->markerChunk = readValueFromFile<decltype(extendedHeader->markerChunk)>(mFile);
-        extendedHeader->instrumentChunks = readValueFromFile<decltype(extendedHeader->instrumentChunks)>(mFile);
-        extendedHeader->AESRecording = readValueFromFile<decltype(extendedHeader->AESRecording)>(mFile);
-        extendedHeader->sampleSize = readValueFromFile<decltype(extendedHeader->sampleSize)>(mFile);
-        extendedHeader->futureUse1 = readValueFromFile<decltype(extendedHeader->futureUse1)>(mFile);
-        extendedHeader->futureUse2 = readValueFromFile<decltype(extendedHeader->futureUse2)>(mFile);
-        extendedHeader->futureUse3 = readValueFromFile<decltype(extendedHeader->futureUse3)>(mFile);
-        extendedHeader->futureUse4 = readValueFromFile<decltype(extendedHeader->futureUse4)>(mFile);
+        extendedHeader->numFrames = readBigValue<decltype(extendedHeader->numFrames)>(mFile);
+        extendedHeader->AIFFSampleRate[0] = readBigValue<std::uint32_t>(mFile, 2);
+        extendedHeader->AIFFSampleRate[1] = readBigValue<std::uint32_t>(mFile);
+        extendedHeader->AIFFSampleRate[2] = readBigValue<std::uint32_t>(mFile);
+        extendedHeader->markerChunk = readBigValue<decltype(extendedHeader->markerChunk)>(mFile);
+        extendedHeader->instrumentChunks = readBigValue<decltype(extendedHeader->instrumentChunks)>(mFile);
+        extendedHeader->AESRecording = readBigValue<decltype(extendedHeader->AESRecording)>(mFile);
+        extendedHeader->sampleSize = readBigValue<decltype(extendedHeader->sampleSize)>(mFile);
+        extendedHeader->futureUse1 = readBigValue<decltype(extendedHeader->futureUse1)>(mFile);
+        extendedHeader->futureUse2 = readBigValue<decltype(extendedHeader->futureUse2)>(mFile);
+        extendedHeader->futureUse3 = readBigValue<decltype(extendedHeader->futureUse3)>(mFile);
+        extendedHeader->futureUse4 = readBigValue<decltype(extendedHeader->futureUse4)>(mFile);
 
         // Copy sample data.
         // Length = numFrames * number of channels (lengthOrChannels)
@@ -313,19 +316,19 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
             new CompressedSoundSampleHeader(*standardHeader)
         );
 
-        compressedHeader->numFrames = readValueFromFile<decltype(compressedHeader->numFrames)>(mFile);
-        compressedHeader->AIFFSampleRate[0] = readValueFromFile<std::uint32_t>(mFile, 2);
-        compressedHeader->AIFFSampleRate[1] = readValueFromFile<std::uint32_t>(mFile);
-        compressedHeader->AIFFSampleRate[2] = readValueFromFile<std::uint32_t>(mFile);
-        compressedHeader->markerChunk = readValueFromFile<decltype(compressedHeader->markerChunk)>(mFile);
-        readArrayFromFile<char>(mFile, compressedHeader->format, 4);
-        compressedHeader->futureUse2 = readValueFromFile<decltype(compressedHeader->futureUse2)>(mFile);
-        compressedHeader->stateVars = readValueFromFile<decltype(compressedHeader->stateVars)>(mFile);
-        compressedHeader->leftOverSamples = readValueFromFile<decltype(compressedHeader->leftOverSamples)>(mFile);
-        compressedHeader->compressionID = readValueFromFile<decltype(compressedHeader->compressionID)>(mFile);
-        compressedHeader->packetSize = readValueFromFile<decltype(compressedHeader->packetSize)>(mFile);
-        compressedHeader->snthID = readValueFromFile<decltype(compressedHeader->snthID)>(mFile);
-        compressedHeader->sampleSize = readValueFromFile<decltype(compressedHeader->sampleSize)>(mFile);
+        compressedHeader->numFrames = readBigValue<decltype(compressedHeader->numFrames)>(mFile);
+        compressedHeader->AIFFSampleRate[0] = readBigValue<std::uint32_t>(mFile, 2);
+        compressedHeader->AIFFSampleRate[1] = readBigValue<std::uint32_t>(mFile);
+        compressedHeader->AIFFSampleRate[2] = readBigValue<std::uint32_t>(mFile);
+        compressedHeader->markerChunk = readBigValue<decltype(compressedHeader->markerChunk)>(mFile);
+        readBigArray<char>(mFile, compressedHeader->format, 4);
+        compressedHeader->futureUse2 = readBigValue<decltype(compressedHeader->futureUse2)>(mFile);
+        compressedHeader->stateVars = readBigValue<decltype(compressedHeader->stateVars)>(mFile);
+        compressedHeader->leftOverSamples = readBigValue<decltype(compressedHeader->leftOverSamples)>(mFile);
+        compressedHeader->compressionID = readBigValue<decltype(compressedHeader->compressionID)>(mFile);
+        compressedHeader->packetSize = readBigValue<decltype(compressedHeader->packetSize)>(mFile);
+        compressedHeader->snthID = readBigValue<decltype(compressedHeader->snthID)>(mFile);
+        compressedHeader->sampleSize = readBigValue<decltype(compressedHeader->sampleSize)>(mFile);
 
         // Copy sample data.
         // Length = numFrames * number of channels (lengthOrChannels)
@@ -359,10 +362,14 @@ std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs)
         " -- Init option for channel: " << "0x" << std::setw(8) <<
             std::hex << rhs.mInitOptionForChannel << std::endl <<
 
-        " -- Number of sound commands: " << std::dec << rhs.mNumSoundCommands << std::endl <<
+        " -- Number of sound commands: " << std::dec << rhs.mNumSoundCommands;
 
-        " -- First sound command: " << "0x" << std::setw(16) << 
-            std::hex << rhs.mSoundCommands[0];;
+        if(rhs.mSoundCommands.size() != 0)
+        {
+            lhs << std::endl <<
+                " -- First sound command: " << "0x" << std::setw(16) <<
+                std::hex << rhs.mSoundCommands[0];
+        }
 
     lhs << std::dec << std::setfill(' '); // Restore
 
