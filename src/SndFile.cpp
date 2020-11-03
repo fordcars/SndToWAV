@@ -19,6 +19,12 @@
 #include <iostream>
 #include <iomanip>
 
+// For IMA4 only:
+// numFrames = num. of pairs of packets.
+// Each packet is 34 bytes.
+// Each uncompressed frame is 16-bit.
+// Each packet decompresses to 128 bytes of sound samples.
+
 const unsigned BUFFER_CMD = 0x8051; // bufferCmd with data offset bit.
 
 namespace
@@ -45,7 +51,7 @@ std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs)
             std::hex << rhs.samplePtr << std::endl <<
 
         " -- Length or num. channels: " << std::dec << rhs.lengthOrChannels << std::endl <<
-        " -- Real sample length: " << rhs.samples.size() << std::endl <<
+        " -- Real sample length: " << rhs.sampleArea.size() << std::endl <<
         " -- Sample rate: " << "0x" << std::setw(8) << std::hex <<
             rhs.sampleRate << std::dec << " (" << fixedSampleRateToFloat(rhs.sampleRate) <<
             " Hz)" << std::endl <<
@@ -253,23 +259,26 @@ const SoundSampleHeader& SndFile::getSoundSampleHeader() const
 
 // Static.
 // Reads sound sample data from current position in stream.
+// sampleLength in bytes.
 void SndFile::readSoundSampleData(std::istream& stream, std::vector<std::uint8_t>& buffer,
-        std::size_t sampleLength, unsigned bytesPerSample)
+        std::size_t sampleLength, unsigned bytesPerValue)
 {
     // In bytes, since we are always dealing with a uint8_t vector.
     buffer.resize(sampleLength);
 
     // Snd only supports 8-bit or 16-bit samples (I think).
-    if(bytesPerSample == 1)
+    if(bytesPerValue == 1)
     {
         readBigArray(stream, buffer.data(), sampleLength);
-    } else if(bytesPerSample == 2)
+    } else if(bytesPerValue == 2)
     {
         // If we have 2 bytes per sample, we must make sure we convert
         // them to native endianness!
+        // Note: 16-bit samples are normally signed, but that doesn't
+        // change anything here.
         readBigArray(stream,
             reinterpret_cast<std::uint16_t*>(buffer.data()),
-            sampleLength / bytesPerSample);
+            sampleLength / bytesPerValue);
     }
 }
 
@@ -298,7 +307,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
     if(standardHeader->encode == cStandardSoundHeaderEncode)
     {
         // Standard sound files always have 1 byte/sample.
-        readSoundSampleData(mFile, standardHeader->samples,
+        readSoundSampleData(mFile, standardHeader->sampleArea,
             standardHeader->lengthOrChannels, 1);
 
         // Debugging info.
@@ -334,7 +343,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
             extendedHeader->sampleSize/8 *
             extendedHeader->lengthOrChannels;
 
-        readSoundSampleData(mFile, extendedHeader->samples, sampleLength,
+        readSoundSampleData(mFile, extendedHeader->sampleArea, sampleLength,
             extendedHeader->sampleSize/8);
 
         // Debug info.
@@ -355,7 +364,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         compressedHeader->AIFFSampleRate[1] = readBigValue<std::uint32_t>(mFile);
         compressedHeader->AIFFSampleRate[2] = readBigValue<std::uint32_t>(mFile);
         compressedHeader->markerChunk = readBigValue<decltype(compressedHeader->markerChunk)>(mFile);
-        readBigArray<char>(mFile, compressedHeader->format, 4);
+        readBigArray<std::uint8_t>(mFile, compressedHeader->format, 4);
         compressedHeader->futureUse2 = readBigValue<decltype(compressedHeader->futureUse2)>(mFile);
         compressedHeader->stateVars = readBigValue<decltype(compressedHeader->stateVars)>(mFile);
         compressedHeader->leftOverSamples = readBigValue<decltype(compressedHeader->leftOverSamples)>(mFile);
@@ -365,13 +374,15 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         compressedHeader->sampleSize = readBigValue<decltype(compressedHeader->sampleSize)>(mFile);
 
         // Copy sample data.
-        // Length = numFrames * number of channels (lengthOrChannels)
+        // Length = numFrames * number of channels (lengthOrChannels) * 34.
+        // See top comment.
         std::size_t sampleLength =
             compressedHeader->numFrames *
-            compressedHeader->lengthOrChannels;
+            compressedHeader->lengthOrChannels *
+            34;
 
-        readSoundSampleData(mFile, compressedHeader->samples, sampleLength,
-            compressedHeader->sampleSize/8);
+        // 1 byte per value, since we only figure out endianness when decoding compressed data.
+        readSoundSampleData(mFile, compressedHeader->sampleArea, sampleLength, 1);
 
         // Debug info.
         std::cout << *compressedHeader << std::endl;

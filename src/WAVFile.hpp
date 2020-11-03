@@ -21,6 +21,7 @@
 #include <iostream>
 #include <string>
 #include <cstdint> // Fixed-width types
+#include <vector>
 
 #include "SndToWAV.hpp"
 
@@ -83,11 +84,14 @@ private:
         }
     }
 
+    static std::vector<std::uint8_t> convertInt16ToUInt8(const std::vector<std::int16_t>& data);
+
     WAVHeader mHeader;
 
     bool populateHeader(const SndFile& sndFile);
     void writeBinaryHeader(std::ostream& outputStream) const;
-    void writeSampleData(std::ostream& outputStream, const SndFile& sndFile) const;
+    std::vector<std::uint8_t> decodeSampleData(const SndFile& sndFile) const;
+    bool writeSampleData(std::ostream& outputStream, const SndFile& sndFile) const;
 
 public:
     WAVFile();

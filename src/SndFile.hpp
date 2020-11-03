@@ -41,7 +41,7 @@ public:
     std::uint8_t encode = 0;
     std::uint8_t baseFrequency = 0;
 
-    std::vector<std::uint8_t> samples; // This is "in the header" according to docs...
+    std::vector<std::uint8_t> sampleArea; // This is in the header according to docs...
 
     friend std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs);
 };
@@ -85,7 +85,7 @@ public:
     // sampleRate.
     std::uint32_t AIFFSampleRate[2] = {0};
     std::uint32_t markerChunk = 0;
-    char format[4] = {0}; // 4-char string.
+    std::uint8_t format[4] = {0}; // 4-char string.
     std::int32_t futureUse2 = 0;
     std::uint32_t stateVars = 0;
     std::uint32_t leftOverSamples = 0;

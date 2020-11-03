@@ -17,6 +17,7 @@
 
 #include "WAVFile.hpp"
 #include "SndFile.hpp"
+#include "IMA4Decoder.hpp"
 
 #include <iomanip>
 #include <cstddef> // For std::size_t
@@ -61,6 +62,28 @@ WAVFile::WAVFile(const SndFile& sndFile, const std::string& WAVFileName)
     convertSnd(sndFile, WAVFileName);
 }
 
+// Convert std::vector<std::int16_t> to std::vector<std::uint8_t>.
+std::vector<std::uint8_t> WAVFile::convertInt16ToUInt8(const std::vector<std::int16_t>& data)
+{
+    std::vector<std::uint8_t> convertedData;
+    convertedData.resize(data.size()*16/8);
+
+    for(std::size_t i = 0; i < data.size(); ++i)
+    {
+        // Signed to unsigned:
+        std::uint16_t unsignedValue =
+            *reinterpret_cast<const std::uint16_t*>(&data[i]);
+
+        // Top 8-bits.
+        convertedData[i*2] = static_cast<std::uint8_t>(unsignedValue >> 8);
+        
+        // Lower 8 bits.
+        convertedData[i*2 + 1] = static_cast<std::uint8_t>(unsignedValue & 0x00FF);
+    }
+
+    return convertedData;
+}
+
 // Returns true on success, false on failure.
 bool WAVFile::populateHeader(const SndFile& sndFile)
 {
@@ -86,6 +109,7 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
         sampleDataSize = extSndHeader->numFrames * 2 * sndHeader.lengthOrChannels;
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
+        // Uncompressed IMA4 generates 128 bytes/packet. Stereo has interleaved packets.
         sampleDataSize = cmpSndHeader->numFrames * 128 * sndHeader.lengthOrChannels;
     }
 
@@ -159,27 +183,97 @@ void WAVFile::writeBinaryHeader(std::ostream& outputStream) const
     writeLittleValue(outputStream, mHeader.subchunk2Size);
 }
 
-void WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile) const
+// We return unsigned bytes for consistency. It's just plain data, we don't
+// care what it represents.
+// Inputted multi-byte samples must be in native-endianness, unless it is compressed data.
+// --- Compressed data must be in the original endianness.
+// Decoded multi-byte samples are in native-endianness.
+std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) const
 {
+   // Could definitely do this cleaner.
     const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
+    const ExtendedSoundSampleHeader* extSndHeader = nullptr;
+    const CompressedSoundSampleHeader* cmpSndHeader = nullptr;
 
+    if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
+    {
+        extSndHeader = static_cast<const ExtendedSoundSampleHeader*>(&sndHeader);
+    } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
+    {
+        cmpSndHeader = static_cast<const CompressedSoundSampleHeader*>(&sndHeader);
+    }
+
+    // Decode!
     if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode ||
         sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
     {
-        // Snd only supports 8-bit or 16-bit samples (I think).
-        unsigned bytesPerSample = mHeader.bitsPerSample/8;
-        if(bytesPerSample == 1)
+        // Do nothing, sample data already correctly encoded (plain PCM samples,
+        // with interleaved samples if in stereo).
+        return sndHeader.sampleArea;
+    } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
+    {
+        // Compressed sound sample headers supports uncompressed sound.
+        if(cmpSndHeader->compressionID == 0)
         {
-            writeLittleArray(outputStream, sndHeader.samples.data(),
-                sndHeader.samples.size());
-        } else if(bytesPerSample == 2)
+            // Uncompressed sound sample, so we do nothing!
+            return sndHeader.sampleArea;
+        }
+
+        std::string formatString =
+            std::string(reinterpret_cast<const char*>(cmpSndHeader->format), 4);
+
+        // Since we only support IMA4 compression right now, samples must be 16-bit.
+        if(mHeader.bitsPerSample != 16)
         {
-            // If we have 2 bytes/sample, we have to make sure each sample is in little-endian!
-            writeLittleArray(outputStream,
-                reinterpret_cast<const std::uint16_t*>(sndHeader.samples.data()),
-                sndHeader.samples.size() / bytesPerSample);
+            std::cerr << "Error: compressed sound sample is " << mHeader.bitsPerSample <<
+                "-bit, when it should be 16-bit! (IMA4 only supports 16-bit " <<
+                " sound samples)." << std::endl;
+            return sndHeader.sampleArea;
+        }
+
+        // We only support IMA4 right now.
+        if(formatString == "ima4" || formatString == "IMA4")
+        {
+            IMA4Decoder ima4Decoder;
+            std::vector<std::int16_t> decodedSamples = 
+                ima4Decoder.decode(sndHeader.sampleArea, mHeader.numChannels);
+
+            return convertInt16ToUInt8(decodedSamples);
+        } else
+        {
+            std::cerr << "Error: cannot decode compressed sound sample! " <<
+                "Unsupported compression format: '" << formatString << "'." << std::endl <<
+                "Note: only IMA4 is currently supported." << std::endl;
+            return sndHeader.sampleArea;
         }
     }
+}
+
+// Returns true on success, false on failure.
+bool WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile) const
+{
+    const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
+    std::vector<std::uint8_t> decodedSampleData = decodeSampleData(sndFile);
+
+    // Snd only supports 8-bit or 16-bit samples (I think).
+    unsigned bytesPerSample = mHeader.bitsPerSample/8;
+    if(bytesPerSample == 1)
+    {
+        writeLittleArray(outputStream, decodedSampleData.data(), decodedSampleData.size());
+        return true;
+    } else if(bytesPerSample == 2)
+    {
+        // If we have 2 bytes/sample, we have to make sure each sample is in little-endian!
+        // Note: 16-bit samples are normally signed, but that doesn't
+        // change anything here.
+        writeLittleArray(outputStream,
+            reinterpret_cast<const std::uint16_t*>(decodedSampleData.data()), decodedSampleData.size() / 2);
+        return true;
+    }
+
+    std::cerr << "Error: sound sample is " << mHeader.bitsPerSample << "-bit, when " <<
+        "the only supported formats are 8-bit and 16-bit sound samples." << std::endl;
+    return false;
 }
 
 // Returns true on success, false on failure.
