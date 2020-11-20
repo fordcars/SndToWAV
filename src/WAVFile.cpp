@@ -62,8 +62,9 @@ WAVFile::WAVFile(const SndFile& sndFile, const std::string& WAVFileName)
     convertSnd(sndFile, WAVFileName);
 }
 
-// Convert std::vector<std::int16_t> to std::vector<std::uint8_t>.
-std::vector<std::uint8_t> WAVFile::convertInt16ToUInt8(const std::vector<std::int16_t>& data)
+// Convert std::vector<std::int16_t> native-endian values to
+// std::vector<std::uint8_t> in little-endian.
+std::vector<std::uint8_t> WAVFile::convertToLittleEndianBytes(const std::vector<std::int16_t>& data)
 {
     std::vector<std::uint8_t> convertedData;
     convertedData.resize(data.size()*16/8);
@@ -72,13 +73,15 @@ std::vector<std::uint8_t> WAVFile::convertInt16ToUInt8(const std::vector<std::in
     {
         // Signed to unsigned:
         std::uint16_t unsignedValue =
-            *reinterpret_cast<const std::uint16_t*>(&data[i]);
+            *reinterpret_cast<const std::uint16_t*>( &(data[i]) );
 
-        // Top 8-bits.
-        convertedData[i*2] = static_cast<std::uint8_t>(unsignedValue >> 8);
+        // LSB goes to smallest adress.
+        // '&' makes this platform-independant.
+        convertedData[i*2] = static_cast<std::uint8_t>(unsignedValue & 0x00FF);
         
-        // Lower 8 bits.
-        convertedData[i*2 + 1] = static_cast<std::uint8_t>(unsignedValue & 0x00FF);
+        // MSB goes to largest adress.
+        // '>>' makes this platform-independant.
+        convertedData[i*2 + 1] = static_cast<std::uint8_t>(unsignedValue >> 8);
     }
 
     return convertedData;
@@ -238,7 +241,7 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
             std::vector<std::int16_t> decodedSamples = 
                 ima4Decoder.decode(sndHeader.sampleArea, mHeader.numChannels);
 
-            return convertInt16ToUInt8(decodedSamples);
+            return convertToLittleEndianBytes(decodedSamples);
         } else
         {
             std::cerr << "Error: cannot decode compressed sound sample! " <<

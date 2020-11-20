@@ -20,6 +20,7 @@
 #include "SndToWAV.hpp"
 
 #include <cstddef> // For std::size_t
+#include <cmath> // For floor()
 #include <iostream>
 #include <limits> // For numeric limits
 
@@ -48,40 +49,50 @@ IMA4Decoder::IMA4Decoder()
 {
 }
 
-// Returns the uncompressed sample for this nibble.
-// nibble only uses the lower 4-bits.
+// Returns the native-endian uncompressed sample for this nibble.
+// Nibble only uses the lower 4-bits.
 // From https://web.archive.org/web/20111026200128/http://www.wooji-juice.com/blog/iphone-openal-ima4-adpcm.html
-// Returns signed value, since samples are signed.
 std::int16_t IMA4Decoder::processNibble(std::uint8_t nibble)
 {
-    std::uint8_t safeNibble = nibble & 0x0f; // Select lower 4-bits only.
+    // Select lower 4-bits only, for safety.
+    nibble = nibble & 0x0f;
 
     // Nibbles have a sign-magnitude representation!
     // See p.6: http://www.cs.columbia.edu/~hgs/audio/dvi/IMA_ADPCM.pdf
-    std::int8_t signedNibble = safeNibble & 0x07; // Select magnitude only.
-    if((safeNibble & 0x08) == 0x08) // Check sign bit (MSbit).
-        signedNibble = -signedNibble;
+    std::uint8_t nibbleMagnitude = nibble & 0x07;
+    bool isNegative = (nibble & 0x08) == 0x08;
 
-    mStepIndex += gIndexTable[safeNibble];
-    // Clamp step index according to table size:
-    mStepIndex = clamp(0, mStepIndex, 88);
+    // Get step.
+    int step = gStepTable[mStepIndex];
 
+    // In the specs, the formula mentionned is:
+    //     ((signed)nibble + 0.5) * step / 4
+    // which yields erroneous results. Instead, we use this:
+    //     ((signed)((unsigned)nibble + 0.5)) * step / 4
     int diff = static_cast<int>(
-        (signedNibble + 0.5f) * mStep/4.0f
+        (nibbleMagnitude + 0.5f) * step/4.0f
     );
-std::cout << mPredictor << std::endl;//TODO why mPredictor so high and random
+    if(isNegative)
+        diff = -diff;
+
+    // Calculate new predictor (sample).
     mPredictor += diff;
-
-    mStep = gStepTable[mStepIndex];
-
-    // Convert int to clamped std::int16_t:
-    return static_cast<std::int16_t>(clamp(
+    // Clamp predictor.
+    mPredictor = clamp(
         std::numeric_limits<std::int16_t>::min(),
         mPredictor,
         std::numeric_limits<std::int16_t>::max()
-    ));
+    );
+
+    // Get next step index.
+    mStepIndex += gIndexTable[nibble];
+    // Clamp step index according to step table size:
+    mStepIndex = clamp(0, mStepIndex, 88);
+
+    return static_cast<std::int16_t>(mPredictor);
 }
 
+// Returns native-endian signed values.
 // Based on:
 // https://web.archive.org/web/20111026200128/http://www.wooji-juice.com/blog/iphone-openal-ima4-adpcm.html
 // https://web.archive.org/web/20111117212301/http://wiki.multimedia.cx/index.php?title=IMA_ADPCM
@@ -102,9 +113,7 @@ std::vector<std::int16_t> IMA4Decoder::decodeFrame(const std::uint8_t frame[IMA4
     mStepIndex = clamp(0, mStepIndex, 88); // Clamp for good measure (7 bits is 0..127, we want 0..88).
 
     // Upper 9 bits. Represents the top 9 bits of the 16-bit value, so sign is important!
-    mPredictor = castSigned16Bit<std::int16_t>(header & 0xff80);
-
-    mStep = gStepTable[mStepIndex];
+    mPredictor = castSigned16Bit<int>(header & 0xff80);
 
     // Iterate through all bytes of frame, starting after the header.
     for(std::size_t i = 2; i < IMA4_PACKET_LENGTH; ++i)
@@ -114,10 +123,10 @@ std::vector<std::int16_t> IMA4Decoder::decodeFrame(const std::uint8_t frame[IMA4
         std::uint8_t highNibble = frame[i] >> 4; // Top 4 bits.
 
         // We must process low nibble first, then high nibble!
+        // These are little-endian values.
         std::int16_t sample1 = processNibble(lowNibble);
         std::int16_t sample2 = processNibble(highNibble);
 
-        // Cast back to unsigned for consistency.
         decodedSamples.push_back(sample1);
         decodedSamples.push_back(sample2);
     }
@@ -125,6 +134,7 @@ std::vector<std::int16_t> IMA4Decoder::decodeFrame(const std::uint8_t frame[IMA4
     return decodedSamples;
 }
 
+// Returns interweaved native-endian signed samples.
 std::vector<std::int16_t> IMA4Decoder::decodeStereoFrame(const std::uint8_t leftFrame[IMA4_PACKET_LENGTH],
         const std::uint8_t rightFrame[IMA4_PACKET_LENGTH])
 {
@@ -135,6 +145,7 @@ std::vector<std::int16_t> IMA4Decoder::decodeStereoFrame(const std::uint8_t left
     // Both left and right samples should be the same length (32*2 bytes).
     std::vector<std::int16_t> stereoSamples(leftSamples.size() + rightSamples.size(), 0);
 
+    // Interweave.
     for(std::size_t i = 0; i < leftSamples.size(); ++i)
     {
         // Left channel is first!
@@ -145,7 +156,7 @@ std::vector<std::int16_t> IMA4Decoder::decodeStereoFrame(const std::uint8_t left
     return stereoSamples;
 }
 
-// Returns the decoded sound samples (interleaved if stereo).
+// Returns the native-endian decoded sound samples (interleaved if stereo).
 std::vector<std::int16_t> IMA4Decoder::decode(const std::vector<std::uint8_t>& data,
     unsigned numChannels)
 {

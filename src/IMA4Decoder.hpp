@@ -56,9 +56,10 @@ private:
     std::vector<std::int16_t> decodeStereoFrame(const std::uint8_t leftFrame[IMA4_PACKET_LENGTH],
         const std::uint8_t rightFrame[IMA4_PACKET_LENGTH]);
 
-    unsigned mStepIndex = 0;
+    // Step index must be a signed value, even if it is clamped!
+    // Failing to do so will result in problematic sound due to overflow.
+    int mStepIndex = 0;
     int mPredictor = 0;
-    unsigned mStep = 0;
 
 public:
     IMA4Decoder();
