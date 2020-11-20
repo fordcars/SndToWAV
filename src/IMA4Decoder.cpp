@@ -98,7 +98,7 @@ std::int16_t IMA4Decoder::processNibble(std::uint8_t nibble)
 // https://web.archive.org/web/20111117212301/http://wiki.multimedia.cx/index.php?title=IMA_ADPCM
 // http://www.cs.columbia.edu/~hgs/audio/dvi/IMA_ADPCM.pdf
 // https://wiki.multimedia.cx/index.php/Apple_QuickTime_IMA_ADPCM
-// Answers by Laurent Etiemble and Arthur Shipkowski from
+// Answers by Laurent Etiemble and Arthur Shipkowski from:
 // --- https://stackoverflow.com/questions/2130831/decoding-ima4-audio-format
 std::vector<std::int16_t> IMA4Decoder::decodeFrame(const std::uint8_t frame[IMA4_PACKET_LENGTH])
 {
