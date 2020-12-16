@@ -36,18 +36,20 @@ void printHelp()
         "Extracts sounds from HFS+ resource forks (.rsrc files)." << std::endl <<
         "Note: only supports 'snd ' files containing a single sound sample." << std::endl <<
         std::endl <<
-        "Usage: SndToWAV [-input INPUT_FILE [-ID RESOURCE_ID | -name RESOURCE_NAME] [-blocksize BLOCKSIZE]]" << std::endl <<
+        "Usage: SndToWAV -input INPUT_FILE [-blocksize BLOCKSIZE]" << std::endl <<
+        "   [-ID RESOURCE_ID | -name RESOURCE_NAME] [-verbose]" << std::endl <<
         std::endl <<
         " --help, --h            display help" << std::endl <<
         std::endl <<
         " -input                 resource fork (.rsrc file) containing 'snd ' resources" << std::endl <<
         std::endl <<
         "Optional options:" << std::endl <<
+        " -blocksize             blocksize of the resource fork, in bytes (default is 4096)" << std::endl <<
         " -ID                    ID of sound resource to extract" << std::endl <<
         " -name                  name of sound resource to extract" << std::endl <<
-        " -blocksize             blocksize of the resource fork, in bytes (default is 4096)" << std::endl <<
+        " -verbose               enable verbose logging" << std::endl <<
         std::endl <<
-        "If no ID or name is specified, will extract all sounds within the resource fork." << std::endl;
+        "If no ID or name is specified, will extract all sounds from the resource fork." << std::endl;
 }
 
 int main(int argc, char **argv)
@@ -58,20 +60,21 @@ int main(int argc, char **argv)
 
     // Modifiable with arguments
     std::string inputFile;
+    std::size_t resourceFileBlockSize = 4096U;
     int ID = -1;
     std::string resourceName;
-    std::size_t resourceFileBlockSize = 4096U;
 
     // Wow! So easy!
     argDefinitionVector argDefinitions = {
-        argDefinitionTuple("--help", nullptr, "printHelp()"),
-        argDefinitionTuple("--h", nullptr, "printHelp()"),
+        argDefinitionTuple("--help", nullptr, "printhelp"),
+        argDefinitionTuple("--h", nullptr, "printhelp"),
 
         argDefinitionTuple("-input", &inputFile, "std::string"),
 
+        argDefinitionTuple("-blocksize", &resourceFileBlockSize, "std::size_t"),
         argDefinitionTuple("-ID", &ID, "int"),
         argDefinitionTuple("-name", &resourceName, "std::string"),
-        argDefinitionTuple("-blocksize", &resourceFileBlockSize, "std::size_t")
+        argDefinitionTuple("-verbose", nullptr, "verbose")
     };
 
     std::vector<std::string> args(argv, argv+argc);
@@ -110,10 +113,13 @@ int main(int argc, char **argv)
 
                 else if(textualType == "float")
                     *static_cast<float*>(associatedVariable) = std::stof(*(foundStringIt + 1));
-                else if(textualType == "printHelp()")
+                else if(textualType == "printhelp")
                 {
                     printHelp();
                     return 0; // Quit
+                } else if(textualType == "verbose")
+                {
+                    Log::setVerbose(true);
                 }
 
             } catch(const std::invalid_argument& ia)
