@@ -29,18 +29,20 @@ The executable will be in the `bin` directory.
 
 # Usage
 
-    SndToWAV [-input INPUT_FILE [-ID RESOURCE_ID | -name RESOURCE_NAME] [-blocksize BLOCKSIZE]]
-
-     --help, --h            display help
-
-     -input                 resource fork (.rsrc file) containing 'snd ' resources
-
-    Optional options:
-     -ID                    ID of sound resource to extract
-     -name                  name of sound resource to extract
-     -blocksize             blocksize of the resource fork, in bytes (default is 4096)
-
-    If no ID or name is specified, will extract all sounds within the resource fork.
+        SndToWAV -input INPUT_FILE [-blocksize BLOCKSIZE]
+            [-ID RESOURCE_ID | -name RESOURCE_NAME] [-verbose]
+        
+         --help, --h            display help
+         
+         -input                 resource fork (.rsrc file) containing 'snd ' resources
+        
+        Optional options:
+         -blocksize             blocksize of the resource fork, in bytes (default is 4096)
+         -ID                    ID of sound resource to extract
+         -name                  name of sound resource to extract
+         -verbose               enable verbose logging
+        
+        If no ID or name is specified, will extract all sounds from the resource fork.
 
 # Additional credits
 * [jorio](https://github.com/jorio) and [ffmpeg](https://ffmpeg.org/) for MACE decoding.
