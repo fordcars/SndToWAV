@@ -4,11 +4,11 @@ A utility to convert `'snd '` Apple Sound Manager sounds to WAV.
 # Features
 * Easily extract sound samples from `.rsrc` files.
 * Supports all sound header formats.
-* Supports IMA4 compression.
+* Supports IMA4 and MACE 3:1 compression.
 * (Should be) platform independent.
 
 # Limitations
-* Currently only supports IMA4 compression.
+* Only supports sounds containing a single sound sample, and nothing else.
 * Can only output `.wav` files.
 
 # Installation
