@@ -18,6 +18,7 @@
 #include "WAVFile.hpp"
 #include "SndFile.hpp"
 #include "IMA4Decoder.hpp"
+#include "MACEDecoder.hpp"
 
 #include <iomanip>
 #include <cstddef> // For std::size_t
@@ -65,7 +66,7 @@ WAVFile::WAVFile(const SndFile& sndFile, const std::string& WAVFileName)
 
 // Convert std::vector<std::int16_t> native-endian values to
 // std::vector<std::uint8_t> in little-endian.
-std::vector<std::uint8_t> WAVFile::convertToLittleEndianBytes(const std::vector<std::int16_t>& data)
+std::vector<std::uint8_t> WAVFile::makeSamplesLittleEndian(const std::vector<std::int16_t>& data)
 {
     std::vector<std::uint8_t> convertedData;
     convertedData.resize(data.size()*16/8);
@@ -194,7 +195,7 @@ void WAVFile::writeBinaryHeader(std::ostream& outputStream) const
 // Decoded multi-byte samples are in native-endianness.
 std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) const
 {
-   // Could definitely do this cleaner.
+    // Could definitely do this cleaner.
     const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
     const ExtendedSoundSampleHeader* extSndHeader = nullptr;
     const CompressedSoundSampleHeader* cmpSndHeader = nullptr;
@@ -216,6 +217,9 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
         return sndHeader.sampleArea;
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
+        std::string formatString =
+            std::string(reinterpret_cast<const char*>(cmpSndHeader->format), 4);
+
         // Compressed sound sample headers supports uncompressed sound.
         if(cmpSndHeader->compressionID == 0)
         {
@@ -223,34 +227,44 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
             return sndHeader.sampleArea;
         }
 
-        std::string formatString =
-            std::string(reinterpret_cast<const char*>(cmpSndHeader->format), 4);
-
-        // Since we only support IMA4 compression right now, samples must be 16-bit.
+        // IMA4 and MACE only support 16-bit samples.
         if(mHeader.bitsPerSample != 16)
         {
             std::cerr << "Error: compressed sound sample is " << mHeader.bitsPerSample <<
-                "-bit, when it should be 16-bit! (IMA4 only supports 16-bit " <<
+                "-bit, when it should be 16-bit! (IMA4 and MACE only support 16-bit " <<
                 " sound samples)." << std::endl;
             return sndHeader.sampleArea;
         }
 
-        // We only support IMA4 right now.
-        if(formatString == "ima4" || formatString == "IMA4")
+        // Decode!
+        if(cmpSndHeader->compressionID == 3 ||
+           formatString == "mac3" ||
+           formatString == "MAC3")
+        {
+            MACEDecoder maceDecoder;
+            std::vector<std::int16_t> decodedSamples = 
+                maceDecoder.decode(sndHeader.sampleArea, mHeader.numChannels);
+
+            return makeSamplesLittleEndian(decodedSamples);
+        } else if(formatString == "ima4" || formatString == "IMA4")
         {
             IMA4Decoder ima4Decoder;
             std::vector<std::int16_t> decodedSamples = 
                 ima4Decoder.decode(sndHeader.sampleArea, mHeader.numChannels);
 
-            return convertToLittleEndianBytes(decodedSamples);
+            return makeSamplesLittleEndian(decodedSamples);
         } else
         {
             std::cerr << "Error: cannot decode compressed sound sample! " <<
-                "Unsupported compression format: '" << formatString << "'." << std::endl <<
-                "Note: only IMA4 is currently supported." << std::endl;
+                "Unsupported compression format: '" << formatString << "' (ID: " <<
+                cmpSndHeader->compressionID << ")." << std::endl;
+
             return sndHeader.sampleArea;
         }
     }
+
+    // If all else fails.
+    return sndHeader.sampleArea; 
 }
 
 // Returns true on success, false on failure.

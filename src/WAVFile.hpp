@@ -84,7 +84,7 @@ private:
         }
     }
 
-    static std::vector<std::uint8_t> convertToLittleEndianBytes(const std::vector<std::int16_t>& data);
+    static std::vector<std::uint8_t> makeSamplesLittleEndian(const std::vector<std::int16_t>& data);
 
     WAVHeader mHeader;
 

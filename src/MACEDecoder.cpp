@@ -204,8 +204,7 @@ std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& d
     unsigned numChannels)
 {
     std::size_t nSamples = 3 * static_cast<int>(data.size()) / numChannels;
-    std::vector<std::int16_t> decodedData;
-    decodedData.reserve(nSamples);
+    std::vector<std::int16_t> decodedData(nSamples);
 
     if (data.size() % (numChannels * 2) != 0)
         std::cerr << "Error: invalid input buffer size for MACE decoding." << std::endl;
