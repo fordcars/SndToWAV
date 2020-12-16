@@ -27,8 +27,6 @@
 
 std::string gVersion = "v1.0";
 
-using Big = long long int;
-
 void printHelp()
 {
     std::cout <<
@@ -37,15 +35,21 @@ void printHelp()
         "**        Version: " << gVersion << "      **" << std::endl <<
         "********************************" << std::endl <<
         std::endl <<
-        "Converts a 'snd ' Apple Sound Manager sound effect into a RIFF .wav." << std::endl <<
-        "Note: only supports format 1 'snd ' files containing a single sound sample." << std::endl <<
+        "Extracts sounds from HFS+ resource forks (.rsrc files)." << std::endl <<
+        "Note: only supports 'snd ' files containing a single sound sample." << std::endl <<
         std::endl <<
-        "Usage: SndToWAV [-input INPUT_FILE -output OUTPUT_FILE]" << std::endl <<
+        "Usage: SndToWAV [-input INPUT_FILE [-ID RESOURCE_ID | -name RESOURCE_NAME] [-blocksize BLOCKSIZE]]" << std::endl <<
         std::endl <<
-        " --help, --h                 display help" << std::endl <<
+        " --help, --h            display help" << std::endl <<
         std::endl <<
-        " -input                      snd file, should be a simple dump of a 'snd ' HFS+ resource" << std::endl <<
-        " -output                     wav file to output" << std::endl;
+        " -input                 resource fork (.rsrc file) containing 'snd ' resources" << std::endl <<
+        std::endl <<
+        "Optional options:" << std::endl <<
+        " -ID                    ID of sound resource to extract" << std::endl <<
+        " -name                  name of sound resource to extract" << std::endl <<
+        " -blocksize             blocksize of the resource fork, in bytes (default is 4096)" << std::endl <<
+        std::endl <<
+        "If no ID or name is specified, will extract all sounds within the resource fork." << std::endl;
 }
 
 int main(int argc, char **argv)
@@ -56,15 +60,20 @@ int main(int argc, char **argv)
 
     // Modifiable with arguments
     std::string inputFile;
-    std::string outputFile;
+    int ID = -1;
+    std::string resourceName;
+    std::size_t resourceFileBlockSize = 4096U;
 
-    // Wow! So easy!!!!!!!!!!!!!! :ooooo
+    // Wow! So easy!
     argDefinitionVector argDefinitions = {
-                    argDefinitionTuple("--help", nullptr, "printHelp()"),
-                    argDefinitionTuple("--h", nullptr, "printHelp()"),
+        argDefinitionTuple("--help", nullptr, "printHelp()"),
+        argDefinitionTuple("--h", nullptr, "printHelp()"),
 
-                    argDefinitionTuple("-input", &inputFile, "std::string"),
-                    argDefinitionTuple("-output", &outputFile, "std::string")
+        argDefinitionTuple("-input", &inputFile, "std::string"),
+
+        argDefinitionTuple("-ID", &ID, "int"),
+        argDefinitionTuple("-name", &resourceName, "std::string"),
+        argDefinitionTuple("-blocksize", &resourceFileBlockSize, "std::size_t")
     };
 
     std::vector<std::string> args(argv, argv+argc);
@@ -101,9 +110,6 @@ int main(int argc, char **argv)
                 else if(textualType == "std::size_t")
                     *static_cast<std::size_t*>(associatedVariable) = std::stoul(*(foundStringIt + 1));
 
-                else if(textualType == "Big")
-                    *static_cast<Big*>(associatedVariable) = std::stoll(*(foundStringIt + 1));
-
                 else if(textualType == "float")
                     *static_cast<float*>(associatedVariable) = std::stof(*(foundStringIt + 1));
                 else if(textualType == "printHelp()")
@@ -124,16 +130,24 @@ int main(int argc, char **argv)
     // Do errors:
     if(inputFile.empty())
     {
-        std::cerr << "Error: input file not specified, you must specify it with -input" << std::endl;
+        std::cerr << "Error: input file not specified; you must specify it with -input." << std::endl;
         return 1;
     }
 
-    if(outputFile.empty())
+    // Do the fun part:
+    SndToWAV sndToWAV(resourceFileBlockSize);
+
+    if(ID > -1)
     {
-        std::cerr << "Error: output file not specified, you must specify it with -input" << std::endl;
-        return 1;
+        // ID was specified.
+        sndToWAV.extract(inputFile, ID);
+    } else if(!resourceName.empty())
+    {
+        // Name was specified.
+        sndToWAV.extract(inputFile, resourceName);
+    } else
+    {
+        // Nothing was specified, extract all!
+        sndToWAV.extract(inputFile);
     }
-
-    SndToWAV sndToWAV;
-    sndToWAV.convert(inputFile, outputFile);
 }
