@@ -20,6 +20,8 @@
 #include "SndFile.hpp"
 #include "WAVFile.hpp"
 
+#include <fstream>
+
 #ifdef USE_UNIVERSAL_ENDIANNESS_HACK
     // Is not guaranteed to work on all compilers.
     // From David Cournapeau
@@ -50,7 +52,8 @@ SndToWAV::SndToWAV()
 // Returns true on success, false on failure.
 bool SndToWAV::convert(const std::string& sndFileName, const std::string& wavFileName)
 {
-    SndFile sndFile(sndFileName);
+    std::ifstream file(sndFileName);
+    SndFile sndFile(file, sndFileName);
 	WAVFile wavFile;
     bool success = wavFile.convertSnd(sndFile, wavFileName);
 

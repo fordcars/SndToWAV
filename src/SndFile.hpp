@@ -20,7 +20,6 @@
 
 #include <string>
 #include <iostream>
-#include <fstream>
 #include <cstdint> // Fixed-width types
 #include <cstddef> // For std::size_t
 #include <vector>
@@ -137,7 +136,7 @@ private:
     }
 
     std::string mFileName;
-    std::ifstream mFile;
+    std::istream& mFile;
     
     std::uint16_t mFormat;
     std::uint16_t mNumDataFormats;
@@ -166,10 +165,8 @@ public:
     static const unsigned char cExtendedSoundHeaderEncode;
     static const unsigned char cCompressedSoundHeaderEncode;
 
-    SndFile();
-    SndFile(const std::string& sndFileName);
+    SndFile(std::istream& file, const std::string& fileName);
 
-    bool open(const std::string& sndFileName);
     const SoundSampleHeader& getSoundSampleHeader() const;
 };
 

@@ -21,6 +21,7 @@
 
 #include <iomanip>
 #include <cstddef> // For std::size_t
+#include <fstream>
 
 std::ostream& operator<<(std::ostream& lhs, const WAVHeader& rhs)
 {
