@@ -19,12 +19,6 @@
 #include <iostream>
 #include <iomanip>
 
-// For IMA4 only:
-// numFrames = num. of pairs of packets.
-// Each packet is 34 bytes.
-// Each uncompressed frame is 16-bit.
-// Each packet decompresses to 128 bytes of sound samples.
-
 const unsigned BUFFER_CMD = 0x8051; // bufferCmd with data offset bit.
 
 namespace
@@ -128,14 +122,11 @@ std::ostream& operator<<(std::ostream& lhs, const CompressedSoundSampleHeader& r
     return lhs;
 }
 
-SndFile::SndFile()
+SndFile::SndFile(std::istream& file, const std::string& fileName)
+    : mFileName(fileName)
+    , mFile(file)
 {
-}
-
-SndFile::SndFile(const std::string& sndFileName)
-    : mFileName(sndFileName)
-{
-    open(sndFileName);
+    parse();
 }
 
 // Parse the current snd file.
@@ -234,22 +225,6 @@ bool SndFile::doBufferCommand(std::uint64_t command)
     }
 
     mSoundSampleHeader = readSoundSampleHeader(param2);
-}
-
-// Opens and parses file.
-// Returns true on success, false on failure.
-bool SndFile::open(const std::string& sndFileName)
-{
-    mFile.open(sndFileName, std::ifstream::in | std::ifstream::binary);
-
-    if(mFile.fail())
-    {
-        std::cerr << "Error: could not open file '" << sndFileName << "'!" <<
-            std::endl;
-        return false;
-    }
-
-    return parse();
 }
 
 const SoundSampleHeader& SndFile::getSoundSampleHeader() const

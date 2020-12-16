@@ -18,10 +18,13 @@
 #ifndef SND_TO_WAV_HPP
 #define SND_TO_WAV_HPP
 
+#include "ResExtractor.hpp"
+
 #include <string>
 #include <cstddef> // For size_t
 #include <climits> // For CHAR_BIT
 #include <cstddef> // For size_t
+#include <memory>
 
 // Define if you are compiling for a little-endian machine.
 // When undefined, big-endian machine is assumed (unless universal
@@ -56,6 +59,14 @@ private:
 
         return dest.u;
     }
+
+    static void printResult(bool success, const std::string& name,
+        const std::string& wavFileName);
+
+    bool convertResourceData(char* resourceData, std::size_t resourceSize,
+        const std::string& name);
+
+    std::size_t mResourceFileBlockSize;
 
 public:
     // Converts Big-endian to native-endian.
@@ -102,12 +113,13 @@ public:
             return swapEndian(nativeEndian);
     }
 
-    SndToWAV();
+    SndToWAV(std::size_t resourceFileBlockSize);
+
+    bool extract(const std::string& resourceFilePath, unsigned int resourceID);
+    bool extract(const std::string& resourceFilePath, const std::string& resourceName);
+    bool extract(const std::string& resourceFilePath);
 
     static const bool mMachineIsLittleEndian;
-
-    bool convert(const std::string& sndFileName, const std::string& wavFileName);
-    
 };
 
 #endif // SND_TO_WAV_HPP

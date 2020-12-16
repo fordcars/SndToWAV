@@ -24,6 +24,12 @@
 #include <iostream>
 #include <limits> // For numeric limits
 
+// For IMA4 only:
+// numFrames = num. of pairs of packets.
+// Each packet is 34 bytes.
+// Each uncompressed frame is 16-bit.
+// Each packet decompresses to 128 bytes of sound samples.
+
 namespace
 {
     // From https://web.archive.org/web/20111117212301/http://wiki.multimedia.cx/index.php?title=IMA_ADPCM

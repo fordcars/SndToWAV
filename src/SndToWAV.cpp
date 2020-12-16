@@ -20,6 +20,8 @@
 #include "SndFile.hpp"
 #include "WAVFile.hpp"
 
+#include <sstream>
+
 #ifdef USE_UNIVERSAL_ENDIANNESS_HACK
     // Is not guaranteed to work on all compilers.
     // From David Cournapeau
@@ -42,28 +44,89 @@
     const bool SndToWAV::mMachineIsLittleEndian = false;
 #endif /* USE_UNIVERSAL_ENDIANNESS_HACK*/
 
-SndToWAV::SndToWAV()
+// Block size is often 4096 bytes.
+SndToWAV::SndToWAV(std::size_t resourceFileBlockSize)
+    : mResourceFileBlockSize(resourceFileBlockSize)
 {
-    
+
 }
 
-// Returns true on success, false on failure.
-bool SndToWAV::convert(const std::string& sndFileName, const std::string& wavFileName)
+// Static
+void SndToWAV::printResult(bool success, const std::string& name,
+    const std::string& wavFileName)
 {
-    SndFile sndFile(sndFileName);
-	WAVFile wavFile;
-    bool success = wavFile.convertSnd(sndFile, wavFileName);
-
     if(success)
     {
         std::cout <<
-            std::endl << "Successfully converted '" + sndFileName + "' to '" +
+            std::endl << "Successfully converted '" + name + "' to '" +
             wavFileName + "'!" << std::endl;
-        return true;
+    } else
+    {
+        std::cerr <<
+            std::endl << "Error: failed to convert '" + name + "' to '" +
+            wavFileName + "'!" << std::endl;
+    }
+}
+
+// Converts char* containing an 'snd ' resource to wav.
+// Returns true on success, false on failure
+bool SndToWAV::convertResourceData(char* resourceData, std::size_t resourceSize,
+    const std::string& name)
+{
+    // Convert char* to stream.
+    std::stringstream stream;
+    stream.rdbuf()->pubsetbuf(resourceData, resourceSize);
+
+    SndFile sndFile(stream, name);
+	WAVFile wavFile;
+    std::string wavFileName = name + ".wav";
+    bool success = wavFile.convertSnd(sndFile, wavFileName);
+    printResult(success, name, wavFileName);
+
+    return success;
+}
+
+// Convert an 'snd ' resource by ID.
+// Returns true on success, false on failure
+bool SndToWAV::extract(const std::string& resourceFilePath, unsigned int resourceID)
+{
+    RESX::File resourceFile(resourceFilePath, mResourceFileBlockSize);
+    std::size_t resourceSize;
+    std::unique_ptr<char, RESX::freeDelete> resourceData =
+        resourceFile.loadResourceFork(0).getResourceData("snd ", resourceID, &resourceSize);
+
+    return convertResourceData(resourceData.get(), resourceSize, std::to_string(resourceID));
+}
+
+// Convert an 'snd ' resource by name.
+// Returns true on success, false on failure
+bool SndToWAV::extract(const std::string& resourceFilePath, const std::string& resourceName)
+{
+    RESX::File resourceFile(resourceFilePath, mResourceFileBlockSize);
+    std::size_t resourceSize;
+    std::unique_ptr<char, RESX::freeDelete> resourceData =
+        resourceFile.loadResourceFork(0).getResourceData("snd ", resourceName, &resourceSize);
+
+    return convertResourceData(resourceData.get(), resourceSize, resourceName);
+}
+
+// Convert all 'snd ' resources in resource file.
+// Returns true on success, false on failure
+bool SndToWAV::extract(const std::string& resourceFilePath)
+{
+    RESX::File resourceFile(resourceFilePath, mResourceFileBlockSize);
+
+    // Get all "snd " resources' names.
+    RESX::ResourceFork resourceFork = resourceFile.loadResourceFork(0);
+    std::vector<std::string> names = resourceFork.getResourcesNames("snd ");
+
+    bool success = true;
+
+    for(const std::string& name : names)
+    {
+        success &= extract(resourceFilePath, name);
     }
 
-    std::cerr <<
-        std::endl << "Error: failed to convert '" + sndFileName + "' to '" +
-        wavFileName + "'!" << std::endl;
-    return false;
+    return success;
 }
+

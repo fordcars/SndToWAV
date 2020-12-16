@@ -1,0 +1,4 @@
+[submodule "lib/ResExtractor"]
+	path = lib/ResExtractor
+	url = https://github.com/fordcars/ResExtractor
+	branch = main

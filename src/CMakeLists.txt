@@ -18,15 +18,22 @@
 cmake_minimum_required(VERSION 3.7.0)
 project(SndToWAVProject)
 
-# Definitions
+# Definitions:
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQURED ON)
 
-# CMAKE_SOURCE_DIR: path to directory of the top-level 'CMakeLists.txt'.
-# CMAKE_BINARY_DIR: path to where we ran 'cmake' from.
+set(SNDTOWAV_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(SNDTOWAV_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/../lib)
+set(SNDTOWAV_OUTPUT_EXE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../bin)
 
-set(SNDTOWAV_SOURCE_DIR ${CMAKE_SOURCE_DIR})
-set(SNDTOWAV_OUTPUT_EXE_DIR ${CMAKE_BINARY_DIR}/../bin)
+set(RESEXTRACTOR_DIR ${SNDTOWAV_LIB_DIR}/ResExtractor)
+set(RESEXTRACTOR_LIB_DIR ${RESEXTRACTOR_DIR}/lib/ResExtractor)
+set(RESEXTRACTOR_INCLUDE_DIR ${RESEXTRACTOR_LIB_DIR}/include)
+
+add_subdirectory(
+    ${RESEXTRACTOR_DIR}/src
+    ${RESEXTRACTOR_DIR}/build
+)
 
 set(SNDTOWAV_SOURCES
 	${SNDTOWAV_SOURCE_DIR}/main.cpp
@@ -48,11 +55,11 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-# Output executable to output directory
+# Output executable to output directory.
 # Must be set BEFORE calling add_executable()!!
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${SNDTOWAV_OUTPUT_EXE_DIR})
 
-# Create cmdline executable
+# Create executable.
 add_executable(
 	SndToWAV
     
@@ -60,11 +67,19 @@ add_executable(
     ${SNDTOWAV_HEADERS}
 )
 
-# Add executable includes
+# Add libraries to link with.
+target_link_libraries(
+    SndToWAV
+    ResExtractor # Also adds as dependency.
+)
+
+# Add executable includes.
 message(STATUS "Adding executable includes...")
 target_include_directories(
 	SndToWAV
+
 	PRIVATE ${SNDTOWAV_SOURCE_DIR}
+    PRIVATE ${RESEXTRACTOR_INCLUDE_DIR}
 )
 
 # Fix Microsoft.
@@ -82,19 +97,4 @@ if(MSVC)
 
 	set(CMAKE_FIND_LIBRARY_PREFIXES "")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib" ".dll")
-endif()
-
-# Fix GNU
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-	# Repeated calls for the same target append the items
-	# in the order called.
-	target_link_libraries(
-		SndToWAV
-
-		# To remove missing DSO symbol error, it has
-		# to be here (annoyingly).
-		# This is actually a library called libdl, which
-		# is the Dynamic Linking library.
-		PRIVATE -ldl
-	)
 endif()
