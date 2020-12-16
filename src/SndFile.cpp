@@ -19,12 +19,6 @@
 #include <iostream>
 #include <iomanip>
 
-// For IMA4 only:
-// numFrames = num. of pairs of packets.
-// Each packet is 34 bytes.
-// Each uncompressed frame is 16-bit.
-// Each packet decompresses to 128 bytes of sound samples.
-
 const unsigned BUFFER_CMD = 0x8051; // bufferCmd with data offset bit.
 
 namespace
