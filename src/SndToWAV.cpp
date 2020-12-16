@@ -58,7 +58,7 @@ void SndToWAV::printResult(bool success, const std::string& name,
     if(success)
     {
         std::cout <<
-            std::endl << "Successfully converted '" + name + "' to '" +
+            std::endl << "Converted '" + name + "' to '" +
             wavFileName + "'!" << std::endl;
     } else
     {
