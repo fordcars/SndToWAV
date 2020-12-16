@@ -24,4 +24,21 @@ To download and build, execute:
     cd SndToWAV && mkdir build && cd build
     cmake ../src
     make
-  
+
+The executable will be in the `bin` directory.
+
+# Usage
+
+    SndToWAV [-input INPUT_FILE [-ID RESOURCE_ID | -name RESOURCE_NAME] [-blocksize BLOCKSIZE]]
+
+     --help, --h            display help
+
+     -input                 resource fork (.rsrc file) containing 'snd ' resources
+
+    Optional options:
+     -ID                    ID of sound resource to extract
+     -name                  name of sound resource to extract
+     -blocksize             blocksize of the resource fork, in bytes (default is 4096)
+
+    If no ID or name is specified, will extract all sounds within the resource fork.
+
