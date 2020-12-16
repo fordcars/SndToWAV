@@ -18,14 +18,14 @@
 #include "Log.hpp"
 #include <iostream>
 
-std::stringstream Log::dead;
+std::stringstream Log::mDeadStream;
 
 std::ostream Log::info(std::cout.rdbuf());
 std::ostream Log::warn(std::cout.rdbuf());
 std::ostream Log::err(std::cerr.rdbuf());
 
-// Initilally, verb will not print anything.
-std::ostream Log::verb(Log::dead.rdbuf());
+// Initilally, verbose is disabled; it will not print anything.
+std::ostream Log::verb(Log::mDeadStream.rdbuf());
 
 // Static
 void Log::setVerbose(bool verboseOn)
@@ -35,6 +35,7 @@ void Log::setVerbose(bool verboseOn)
         verb.rdbuf(std::cout.rdbuf());
     } else
     {
-        verb.rdbuf(dead.rdbuf());
+        verb.rdbuf(mDeadStream.rdbuf());
     }
 }
+

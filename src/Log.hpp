@@ -24,7 +24,7 @@
 class Log
 {
 private:
-    static std::stringstream dead; // Will not print anything.
+    static std::stringstream mDeadStream; // Will not print anything.
 
 public:
     static std::ostream info; // Normal logging
