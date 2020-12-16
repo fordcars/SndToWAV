@@ -23,7 +23,6 @@
 #include <string>
 #include <cstddef> // For size_t
 #include <climits> // For CHAR_BIT
-#include <cstddef> // For size_t
 #include <memory>
 
 // Define if you are compiling for a little-endian machine.

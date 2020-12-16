@@ -16,9 +16,9 @@
 // along with SndToWAV. If not, see <http://www.gnu.org/licenses/>.
 
 #include "SndToWAV.hpp"
+#include "Log.hpp"
 
 #include <cstddef> // For size_t
-#include <iostream>
 #include <vector>
 #include <tuple>
 #include <algorithm>
@@ -27,7 +27,7 @@ std::string gVersion = "v1.0";
 
 void printHelp()
 {
-    std::cout <<
+    Log::info <<
         "********************************" << std::endl <<
         "**          SndToWAV          **" << std::endl <<
         "**        Version: " << gVersion << "      **" << std::endl <<
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 
             } catch(const std::invalid_argument& ia)
             {
-                std::cerr << "Invalid value for '" + command + "'!"
+                Log::err << "Invalid value for '" + command + "'!"
                     << std::endl;
                 return 1;
             }
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
     // Do errors:
     if(inputFile.empty())
     {
-        std::cerr << "Error: input file not specified; you must specify it with -input." << std::endl;
+        Log::err << "Error: input file not specified; you must specify it with -input." << std::endl;
         return 1;
     }
 

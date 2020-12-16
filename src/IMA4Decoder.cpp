@@ -16,12 +16,11 @@
 // along with SndToWAV. If not, see <http://www.gnu.org/licenses/>.
 
 #include "IMA4Decoder.hpp"
-
+#include "Log.hpp"
 #include "SndToWAV.hpp"
 
 #include <cstddef> // For std::size_t
 #include <cmath> // For floor()
-#include <iostream>
 #include <limits> // For numeric limits
 
 // For IMA4 only:
@@ -170,17 +169,17 @@ std::vector<std::int16_t> IMA4Decoder::decode(const std::vector<std::uint8_t>& d
 
     if(data.size() % 34 != 0)
     {
-        std::cout << "Warning: data given to IMA4 decoder is not a multiple of 34 bytes! " <<
+        Log::warn << "Warning: data given to IMA4 decoder is not a multiple of 34 bytes! " <<
             "Is this truly IMA4 data?" << std::endl;
     } else if(numChannels == 2 && data.size() % (34*2) != 0)
     {
-        std::cout << "Warning: stereo data given to IMA4 decoder is not a multiple " <<
+        Log::warn << "Warning: stereo data given to IMA4 decoder is not a multiple " <<
             "of 34 * 2 bytes! Is this truly stereo IMA4 data?" << std::endl;
     }
 
     if(numChannels != 1 && numChannels != 2)
     {
-        std::cerr << "Error: invalid number of channels given (" << numChannels << "). " <<
+        Log::err << "Error: invalid number of channels given (" << numChannels << "). " <<
             " Can only decode IMA4 with 1 (mono) or 2 (stereo) channels!" << std::endl;
         return decodedSamples;
     }

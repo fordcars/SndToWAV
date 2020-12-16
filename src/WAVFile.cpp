@@ -16,6 +16,7 @@
 // along with SndToWAV. If not, see <http://www.gnu.org/licenses/>.
 
 #include "WAVFile.hpp"
+#include "Log.hpp"
 #include "SndFile.hpp"
 #include "IMA4Decoder.hpp"
 #include "MACEDecoder.hpp"
@@ -164,7 +165,7 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
     mHeader.subchunk2Size = sampleDataSize;
 
     // Debug info.
-    std::cout << mHeader << std::endl;
+    Log::verb << mHeader << std::endl;
 
     return true;
 }
@@ -230,7 +231,7 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
         // IMA4 and MACE only support 16-bit samples.
         if(mHeader.bitsPerSample != 16)
         {
-            std::cerr << "Error: compressed sound sample is " << mHeader.bitsPerSample <<
+            Log::err << "Error: compressed sound sample is " << mHeader.bitsPerSample <<
                 "-bit, when it should be 16-bit! (IMA4 and MACE only support 16-bit " <<
                 " sound samples)." << std::endl;
             return sndHeader.sampleArea;
@@ -255,7 +256,7 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
             return makeSamplesLittleEndian(decodedSamples);
         } else
         {
-            std::cerr << "Error: cannot decode compressed sound sample! " <<
+            Log::err << "Error: cannot decode compressed sound sample! " <<
                 "Unsupported compression format: '" << formatString << "' (ID: " <<
                 cmpSndHeader->compressionID << ")." << std::endl;
 
@@ -289,7 +290,7 @@ bool WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile
         return true;
     }
 
-    std::cerr << "Error: sound sample is " << mHeader.bitsPerSample << "-bit, when " <<
+    Log::err << "Error: sound sample is " << mHeader.bitsPerSample << "-bit, when " <<
         "the only supported formats are 8-bit and 16-bit sound samples." << std::endl;
     return false;
 }
@@ -305,7 +306,7 @@ bool WAVFile::convertSnd(const SndFile& sndFile, const std::string& WAVFileName)
 
     if(outputFile.fail())
     {
-        std::cerr << "Error: could not open '" + WAVFileName + "' for writing!" <<
+        Log::err << "Error: could not open '" + WAVFileName + "' for writing!" <<
             std::endl;
         return false;
     }

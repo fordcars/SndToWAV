@@ -37,6 +37,7 @@ add_subdirectory(
 
 set(SNDTOWAV_SOURCES
 	${SNDTOWAV_SOURCE_DIR}/main.cpp
+    ${SNDTOWAV_SOURCE_DIR}/Log.cpp
     ${SNDTOWAV_SOURCE_DIR}/SndToWAV.cpp
     ${SNDTOWAV_SOURCE_DIR}/SndFile.cpp
 	${SNDTOWAV_SOURCE_DIR}/WAVFile.cpp
@@ -45,6 +46,7 @@ set(SNDTOWAV_SOURCES
 )
 
 set(SNDTOWAV_HEADERS
+    ${SNDTOWAV_SOURCE_DIR}/Log.hpp
     ${SNDTOWAV_SOURCE_DIR}/SndToWAV.hpp
     ${SNDTOWAV_SOURCE_DIR}/SndFile.hpp
 	${SNDTOWAV_SOURCE_DIR}/WAVFile.hpp

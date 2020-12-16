@@ -16,7 +16,8 @@
 // along with SndToWAV. If not, see <http://www.gnu.org/licenses/>.
 
 #include "SndFile.hpp"
-#include <iostream>
+#include "Log.hpp"
+
 #include <iomanip>
 
 const unsigned BUFFER_CMD = 0x8051; // bufferCmd with data offset bit.
@@ -135,7 +136,7 @@ bool SndFile::parse()
 {
     if(mFile.fail())
     {
-        std::cerr << "Error: file '" << mFileName << "' cannot be parsed, since " <<
+        Log::err << "Error: file '" << mFileName << "' cannot be parsed, since " <<
             "it is invalid!" << std::endl;
         return false;
     }
@@ -147,7 +148,7 @@ bool SndFile::parse()
     
     if(mNumDataFormats == 0)
     {
-        std::cerr << "Error: snd file contains 0 data formats!" << std::endl;
+        Log::err << "Error: snd file contains 0 data formats!" << std::endl;
         return false;
     }
 
@@ -164,13 +165,13 @@ bool SndFile::parse()
     // Warn if more than 1 command.
     if(mNumSoundCommands > 1)
     {
-        std::cout << "Warning: more than 1 sound command found in 'snd ' file! " <<
+        Log::warn << "Warning: more than 1 sound command found in 'snd ' file! " <<
             "May not convert correctly. (Are you sure your 'snd ' file only contains " <<
             "a single sound sample?)" << std::endl;
     }
 
     // Print our snd file info for debug.
-    std::cout << *this << std::endl;
+    Log::verb << *this << std::endl;
 
     // Immediately interpret bufferCmd if present.
     // We only interpret the first bufferCmd, so watchout if there is more than one!
@@ -180,7 +181,7 @@ bool SndFile::parse()
         doBufferCommand(fullBufferCmd);
     else
     {
-        std::cerr << "Error: bufferCmd not found in snd file! Cannot convert." << std::endl;
+        Log::err << "Error: bufferCmd not found in snd file! Cannot convert." << std::endl;
         return false;
     }
 }
@@ -212,14 +213,14 @@ bool SndFile::doBufferCommand(std::uint64_t command)
 
     if(cmdName != BUFFER_CMD)
     {
-        std::cerr << "Error: not a buffer command! Cannot interpret command." <<
+        Log::err << "Error: not a buffer command! Cannot interpret command." <<
             std::endl;
         return false;
     }
 
     if(mFile.fail())
     {
-        std::cerr << "Error: cannot interpret bufferCmd! File is invalid." <<
+        Log::err << "Error: cannot interpret bufferCmd! File is invalid." <<
             std::endl;
         return false;
     }
@@ -274,7 +275,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
     // Checks
     if(standardHeader->samplePtr != 0)
     {
-        std::cerr << "Error: sound sample data pointer is not null! Cannot read data." <<
+        Log::err << "Error: sound sample data pointer is not null! Cannot read data." <<
             std::endl;
         return standardHeader;
     }
@@ -286,7 +287,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
             standardHeader->lengthOrChannels, 1);
 
         // Debugging info.
-        std::cout << *standardHeader << std::endl;
+        Log::verb << *standardHeader << std::endl;
 
         // Return standard header.
         return standardHeader;
@@ -322,7 +323,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
             extendedHeader->sampleSize/8);
 
         // Debug info.
-        std::cout << *extendedHeader << std::endl;
+        Log::verb << *extendedHeader << std::endl;
 
         // Return extended header.
         return extendedHeader;
@@ -360,13 +361,13 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         readSoundSampleData(mFile, compressedHeader->sampleArea, sampleLength, 1);
 
         // Debug info.
-        std::cout << *compressedHeader << std::endl;
+        Log::verb << *compressedHeader << std::endl;
 
         // Return compressed header.
         return compressedHeader;
     }
 
-    std::cerr << "Error: unrecognized sound sampler header encoding! Cannot convert." <<
+    Log::err << "Error: unrecognized sound sampler header encoding! Cannot convert." <<
         std::endl;
     return std::unique_ptr<SoundSampleHeader>(new SoundSampleHeader());
 }

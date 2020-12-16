@@ -18,14 +18,15 @@
 #ifndef SND_FILE_HPP
 #define SND_FILE_HPP
 
+#include "SndToWAV.hpp" // For endian stuff
+
 #include <string>
-#include <iostream>
+#include <istream>
+#include <ostream>
 #include <cstdint> // Fixed-width types
 #include <cstddef> // For std::size_t
 #include <vector>
 #include <memory>
-
-#include "SndToWAV.hpp" // For endian stuff
 
 class SoundSampleHeader
 {

@@ -16,7 +16,7 @@
 // along with SndToWAV. If not, see <http://www.gnu.org/licenses/>.
 
 #include "SndToWAV.hpp"
-
+#include "Log.hpp"
 #include "SndFile.hpp"
 #include "WAVFile.hpp"
 
@@ -57,11 +57,11 @@ void SndToWAV::printResult(bool success, const std::string& name,
 {
     if(success)
     {
-        std::cout << "Converted '" + name + "' to '" +
+        Log::info << "Converted '" + name + "' to '" +
             wavFileName + "'!" << std::endl;
     } else
     {
-        std::cerr <<  "Error: failed to convert '" + name + "' to '" +
+        Log::err <<  "Error: failed to convert '" + name + "' to '" +
             wavFileName + "'!" << std::endl;
     }
 }

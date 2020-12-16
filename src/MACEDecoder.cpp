@@ -36,8 +36,8 @@
 // ---- End ffmpeg copyright notices ----
 
 #include "MACEDecoder.hpp"
+#include "Log.hpp"
 
-#include <iostream>
 #include <cassert>
 
 static const std::int16_t MACEtab1[] = {-13, 8, 76, 222, 222, 76, 8, -13};
@@ -207,7 +207,7 @@ std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& d
     std::vector<std::int16_t> decodedData(nSamples);
 
     if (data.size() % (numChannels * 2) != 0)
-        std::cerr << "Error: invalid input buffer size for MACE decoding." << std::endl;
+        Log::err << "Error: invalid input buffer size for MACE decoding." << std::endl;
 
     std::int16_t* out = reinterpret_cast<std::int16_t*>(decodedData.data());
 

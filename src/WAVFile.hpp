@@ -18,7 +18,7 @@
 #ifndef WAV_FILE_HPP
 #define WAV_FILE_HPP
 
-#include <iostream>
+#include <ostream>
 #include <string>
 #include <cstdint> // Fixed-width types
 #include <vector>
