@@ -42,3 +42,5 @@ The executable will be in the `bin` directory.
 
     If no ID or name is specified, will extract all sounds within the resource fork.
 
+# Additional credits
+* [jorio](https://github.com/jorio) and [ffmpeg](https://ffmpeg.org/) for MACE decoding.
