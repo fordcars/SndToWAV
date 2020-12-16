@@ -18,6 +18,7 @@
 #include "SndToWAV.hpp"
 #include "Log.hpp"
 
+#include <iomanip>
 #include <cstddef> // For size_t
 #include <vector>
 #include <tuple>
@@ -30,7 +31,8 @@ void printHelp()
     Log::info <<
         "********************************" << std::endl <<
         "**          SndToWAV          **" << std::endl <<
-        "**        Version: " << gVersion << "      **" << std::endl <<
+        "**        Version: " << std::setw(11) << std::left <<
+            gVersion << std::right << "**" << std::endl <<
         "********************************" << std::endl <<
         std::endl <<
         "Extracts sounds from HFS+ resource forks (.rsrc files)." << std::endl <<
