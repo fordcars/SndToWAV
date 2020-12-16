@@ -26,7 +26,12 @@ set(CMAKE_CXX_STANDARD_REQURED ON)
 # CMAKE_BINARY_DIR: path to where we ran 'cmake' from.
 
 set(SNDTOWAV_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+set(SNDTOWAV_LIB_DIR ${CMAKE_BINARY_DIR}/../lib)
 set(SNDTOWAV_OUTPUT_EXE_DIR ${CMAKE_BINARY_DIR}/../bin)
+
+set(RESEXTRACTOR_DIR ${SNDTOWAV_LIB_DIR}/ResExtractor)
+set(RESEXTRACTOR_INCLUDE_DIR ${RESEXTRACTOR_DIR}/include)
+set(RESEXTRACTOR_LIB ${RESEXTRACTOR_DIR}/libResExtractor.a)
 
 set(SNDTOWAV_SOURCES
 	${SNDTOWAV_SOURCE_DIR}/main.cpp
@@ -60,11 +65,18 @@ add_executable(
     ${SNDTOWAV_HEADERS}
 )
 
+# Add executable libraries to link
+target_link_libraries(
+    SndToWAV
+    ${RESEXTRACTOR_LIB}
+)
+
 # Add executable includes
 message(STATUS "Adding executable includes...")
 target_include_directories(
 	SndToWAV
 	PRIVATE ${SNDTOWAV_SOURCE_DIR}
+    PRIVATE ${RESEXTRACTOR_INCLUDE_DIR}
 )
 
 # Fix Microsoft.
@@ -82,19 +94,4 @@ if(MSVC)
 
 	set(CMAKE_FIND_LIBRARY_PREFIXES "")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib" ".dll")
-endif()
-
-# Fix GNU
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-	# Repeated calls for the same target append the items
-	# in the order called.
-	target_link_libraries(
-		SndToWAV
-
-		# To remove missing DSO symbol error, it has
-		# to be here (annoyingly).
-		# This is actually a library called libdl, which
-		# is the Dynamic Linking library.
-		PRIVATE -ldl
-	)
 endif()
