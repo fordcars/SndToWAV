@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with SndToWAV. If not, see <http://www.gnu.org/licenses/>.
 
-#include "main.hpp"
-
 #include "SndToWAV.hpp"
 
 #include <cstddef> // For size_t
