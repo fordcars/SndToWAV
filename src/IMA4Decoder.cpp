@@ -52,6 +52,7 @@ namespace
 
 IMA4Decoder::IMA4Decoder()
 {
+    // Do nothing
 }
 
 // Returns the native-endian uncompressed sample for this nibble.
