@@ -57,7 +57,7 @@ void SndToWAV::printResult(bool success, const std::string& name,
 {
     if(success)
     {
-        Log::info << "Converted '" + name + "' to '" +
+        Log::info << "Extracted '" + name + "' to '" +
             wavFileName + "'!" << std::endl;
     } else
     {
@@ -123,6 +123,7 @@ bool SndToWAV::extract(const std::string& resourceFilePath)
     for(const std::string& name : names)
     {
         success &= extract(resourceFilePath, name);
+        Log::verb << std::endl; // To avoid cluttered verbose output.
     }
 
     return success;
