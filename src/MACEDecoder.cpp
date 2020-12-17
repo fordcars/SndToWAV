@@ -204,12 +204,12 @@ std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& d
     unsigned numChannels)
 {
     std::size_t nSamples = 3 * static_cast<int>(data.size()) / numChannels;
-    std::vector<std::int16_t> decodedData(nSamples);
+    std::vector<std::int16_t> decodedData(nSamples * numChannels);
 
     if (data.size() % (numChannels * 2) != 0)
         Log::err << "Error: invalid input buffer size for MACE decoding." << std::endl;
 
-    std::int16_t* out = reinterpret_cast<std::int16_t*>(decodedData.data());
+    std::int16_t* out = decodedData.data();
 
     MACEContext ctx = {};
 
@@ -232,6 +232,6 @@ std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& d
         }
     }
 
-    assert(reinterpret_cast<char*>(out) == decodedData.data() + decodedData.size());
+    assert(out == decodedData.data() + decodedData.size());
     return decodedData;
 }
