@@ -88,6 +88,14 @@ target_include_directories(
     PRIVATE ${RESEXTRACTOR_INCLUDE_DIR}
 )
 
+# Enable warnings
+# From https://stackoverflow.com/questions/2368811/how-to-set-warning-level-in-cmake
+if(MSVC)
+  target_compile_options(SndToWAV PRIVATE /W4 /WX)
+else()
+  target_compile_options(SndToWAV PRIVATE -Wall -Wextra -pedantic)
+endif()
+
 # Fix Microsoft.
 # Unlike other compilers where we can check
 # the CMAKE_CXX_COMPILER_ID string, Microsoft Visual C++
