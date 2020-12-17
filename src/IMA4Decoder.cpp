@@ -162,9 +162,19 @@ std::vector<std::int16_t> IMA4Decoder::decodeStereoFrame(const std::uint8_t left
     return stereoSamples;
 }
 
-std::size_t IMA4Decoder::getCompressedSize(std::size_t numFrames, std::size_t numChannels)
+std::size_t IMA4Decoder::getEncodedSize(std::size_t numPackets)
 {
-    return numFrames * numChannels * IMA4_PACKET_LENGTH;
+    return numPackets * IMA4_PACKET_LENGTH;
+}
+
+std::size_t IMA4Decoder::getDecodedSize(std::size_t numPackets)
+{
+    return numPackets * 128;
+}
+
+unsigned IMA4Decoder::getBitsPerSample()
+{
+    return 16;
 }
 
 // Returns the native-endian decoded sound samples (interleaved if stereo).

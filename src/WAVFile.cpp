@@ -115,8 +115,8 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
         sampleDataSize = extSndHeader->numFrames * 2 * sndHeader.lengthOrChannels;
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
-        // Uncompressed IMA4 generates 128 bytes/packet. Stereo has interleaved packets.
-        sampleDataSize = cmpSndHeader->numFrames * 128 * sndHeader.lengthOrChannels;
+                                                        // Uncompressed IMA4 generates 128 bytes/packet. Stereo has interleaved packets.
+                                                        sampleDataSize = cmpSndHeader->numFrames * 128 * sndHeader.lengthOrChannels;
     }
 
     mHeader.chunkSize = 36 + sampleDataSize;
@@ -149,12 +149,9 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
         bitsPerSample = extSndHeader->sampleSize;
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
-        // If == 0, we are supposed to guess the packet size :(
-        if(cmpSndHeader->packetSize == 0)
-            // Normally 16-bit, but not always! This may fail.
-            bitsPerSample = 16;
-        else
-            bitsPerSample = cmpSndHeader->packetSize;
+        // sampleSize for compressed sound headers literally make no sense,
+        // so lets assume it instead.
+        bitsPerSample = cmpSndHeader->decoder->getBitsPerSample();
     }
 
     mHeader.byteRate = mHeader.sampleRate * mHeader.numChannels * bitsPerSample/8;
@@ -240,7 +237,7 @@ bool WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile
 {
     std::vector<std::uint8_t> decodedSampleData = decodeSampleData(sndFile);
 
-    // Snd only supports 8-bit or 16-bit samples (I think).
+    // We only support 8-bit or 16-bit samples.
     unsigned bytesPerSample = mHeader.bitsPerSample/8;
     if(bytesPerSample == 1)
     {

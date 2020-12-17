@@ -394,12 +394,14 @@ bool SndFile::loadSoundSampleHeader(std::uint16_t offset)
         compressedHeader->createDecoder();
 
         // Copy sample data.
-        std::size_t sampleLength = compressedHeader->decoder->getCompressedSize(
-                compressedHeader->numFrames,
-                compressedHeader->lengthOrChannels
+        // numFrames is the number of packet frames, not sample frames.
+        // So, numFrames * numChannels = numPackets.
+        std::size_t sampleLength = compressedHeader->decoder->getEncodedSize(
+                compressedHeader->numFrames * compressedHeader->lengthOrChannels
         );
 
-        // 1 byte per value, since we only figure out endianness when decoding compressed data.
+        // Read values as bytes, since we only figure out endianness when
+        // decoding compressed data.
         readSoundSampleData(mFile, compressedHeader->sampleArea, sampleLength, 1);
 
         // Debug info.

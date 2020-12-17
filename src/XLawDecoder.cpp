@@ -53,10 +53,19 @@ XLawDecoder::XLawDecoder()
     // Do nothing
 }
 
-std::size_t XLawDecoder::getCompressedSize(std::size_t numFrames,
-        std::size_t numChannels)
+std::size_t XLawDecoder::getEncodedSize(std::size_t numPackets)
 {
-    return numFrames * numChannels;
+    return numPackets * 1; // 1 byte per packet.
+}
+
+std::size_t XLawDecoder::getDecodedSize(std::size_t numPackets)
+{
+    return numPackets;
+}
+
+unsigned XLawDecoder::getBitsPerSample()
+{
+    return 16;
 }
 
 std::vector<std::int16_t> XLawDecoder::decode(const std::vector<std::uint8_t>& data,

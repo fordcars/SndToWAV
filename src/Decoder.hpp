@@ -28,8 +28,13 @@ public:
     virtual ~Decoder() = default;
 
     // Returns size of compressed samples, in bytes.
-    virtual std::size_t getCompressedSize(std::size_t numFrames,
-        std::size_t numChannels) = 0;
+    virtual std::size_t getEncodedSize(std::size_t numPackets) = 0;
+
+    // Returns size of uncompressed samples, in bytes.
+    virtual std::size_t getDecodedSize(std::size_t numPackets) = 0;
+
+    // Bits per uncompressed sample.
+    virtual unsigned getBitsPerSample() = 0;
 
     virtual std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) = 0;

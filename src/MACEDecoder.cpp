@@ -199,10 +199,19 @@ MACEDecoder::MACEDecoder()
     // Do nothing
 }
 
-std::size_t MACEDecoder::getCompressedSize(std::size_t numFrames, std::size_t numChannels)
+std::size_t MACEDecoder::getEncodedSize(std::size_t numPackets)
 {
-    // 3:1 compression of 2-byte samples into 2-byte packets.
-    return ((numFrames * numChannels) / 3) * 2;
+    return numPackets * 2; // 2 bytes per packet
+}
+
+std::size_t MACEDecoder::getDecodedSize(std::size_t numPackets)
+{
+    return numPackets * 3;
+}
+
+unsigned MACEDecoder::getBitsPerSample()
+{
+    return 16;
 }
 
 // Decodes MACE 3:1 compressed sound only.

@@ -29,8 +29,11 @@ class XLawDecoder : public Decoder
 protected:
     XLawDecoder();
 
-    std::size_t getCompressedSize(std::size_t numFrames,
-        std::size_t numChannels) override;
+    std::size_t getEncodedSize(std::size_t numPackets) override;
+
+    std::size_t getDecodedSize(std::size_t numPackets) override;
+
+    unsigned getBitsPerSample() override;
 
     std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels, bool useULaw);

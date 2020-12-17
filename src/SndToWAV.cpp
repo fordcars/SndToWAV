@@ -95,8 +95,8 @@ bool SndToWAV::extract(const std::string& resourceFilePath, unsigned int resourc
 
     if(resourceData == nullptr)
     {
-        Log::err << "Error: could not find sound with ID '" << std::to_string(resourceID) <<
-            "' in '" << resourceFilePath << "'!" << std::endl;
+        Log::err << "Error: could not find sound with ID '" << resourceID << "' in '" <<
+            resourceFilePath << "'!" << std::endl;
         return false;
     }
     
