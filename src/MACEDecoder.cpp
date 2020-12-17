@@ -201,7 +201,8 @@ MACEDecoder::MACEDecoder()
 
 std::size_t MACEDecoder::getCompressedSize(std::size_t numFrames, std::size_t numChannels)
 {
-    return (numFrames * numChannels) / 3;
+    // 3:1 compression of 2-byte samples.
+    return 2 * (numFrames * numChannels) / 3;
 }
 
 // Decodes MACE 3:1 compressed sound only.

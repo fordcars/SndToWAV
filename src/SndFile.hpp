@@ -19,6 +19,7 @@
 #define SND_FILE_HPP
 
 #include "SndToWAV.hpp" // For endian stuff
+#include "Decoder.hpp"
 
 #include <string>
 #include <istream>
@@ -32,6 +33,7 @@ class SoundSampleHeader
 {
 public:
     virtual ~SoundSampleHeader() = default;
+    friend std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs);
 
     std::uint32_t samplePtr = 0;
     std::int32_t lengthOrChannels = 0; // Number of samples or number of channels (for compressed)
@@ -42,8 +44,6 @@ public:
     std::uint8_t baseFrequency = 0;
 
     std::vector<std::uint8_t> sampleArea; // This is in the header according to docs...
-
-    friend std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs);
 };
 
 class ExtendedSoundSampleHeader : public SoundSampleHeader
@@ -52,6 +52,8 @@ public:
     ExtendedSoundSampleHeader() = default;
     ExtendedSoundSampleHeader(const SoundSampleHeader& soundSampleHeader)
         : SoundSampleHeader(soundSampleHeader) {};
+
+    friend std::ostream& operator<<(std::ostream& lhs, const ExtendedSoundSampleHeader& rhs);
 
     std::int32_t numFrames = 0;
     // 80-bit extended value.
@@ -67,8 +69,6 @@ public:
     std::uint32_t futureUse2 = 0;
     std::uint32_t futureUse3 = 0;
     std::uint32_t futureUse4 = 0;
-
-    friend std::ostream& operator<<(std::ostream& lhs, const ExtendedSoundSampleHeader& rhs);
 };
 
 class CompressedSoundSampleHeader : public SoundSampleHeader
@@ -77,6 +77,8 @@ public:
     CompressedSoundSampleHeader() = default;
     CompressedSoundSampleHeader(const SoundSampleHeader& soundSampleHeader)
         : SoundSampleHeader(soundSampleHeader) {};
+
+    friend std::ostream& operator<<(std::ostream& lhs, const CompressedSoundSampleHeader& rhs);
 
     std::int32_t numFrames = 0;
     // 80-bit extended value.
@@ -95,7 +97,9 @@ public:
     std::int16_t snthID = 0;
     std::int16_t sampleSize = 0;
 
-    friend std::ostream& operator<<(std::ostream& lhs, const CompressedSoundSampleHeader& rhs);
+    std::unique_ptr<Decoder> decoder; // Polymorphic
+
+    void createDecoder();
 };
 
 class SndFile
@@ -146,7 +150,7 @@ private:
     std::uint16_t mNumSoundCommands;
     std::vector<std::uint64_t> mSoundCommands;
 
-    std::unique_ptr<SoundSampleHeader> mSoundSampleHeader; // Polymorphic
+    std::unique_ptr<SoundSampleHeader> mSoundSampleHeader;
 
     std::vector<std::uint64_t> mSoundData; // Filled when interpreting bufferCmd.
 
@@ -157,7 +161,7 @@ private:
     static void readSoundSampleData(std::istream& stream, std::vector<std::uint8_t>& buffer,
         std::size_t sampleLength, unsigned bytesPerSample);
 
-    std::unique_ptr<SoundSampleHeader> readSoundSampleHeader(std::uint16_t offset);
+    bool loadSoundSampleHeader(std::uint16_t offset);
 
     friend std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs);
 

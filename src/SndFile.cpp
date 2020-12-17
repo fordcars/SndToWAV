@@ -18,7 +18,12 @@
 #include "SndFile.hpp"
 #include "Log.hpp"
 
+#include "MACEDecoder.hpp"
+#include "IMA4Decoder.hpp"
+#include "XLawDecoder.hpp"
+
 #include <iomanip>
+#include <utility> // For std::move
 
 const unsigned BUFFER_CMD = 0x8051; // bufferCmd with data offset bit.
 
@@ -121,6 +126,34 @@ std::ostream& operator<<(std::ostream& lhs, const CompressedSoundSampleHeader& r
     lhs << std::dec << std::setfill(' '); // Restore
 
     return lhs;
+}
+
+// Creates appropriate decoder using the currently loaded header information.
+void CompressedSoundSampleHeader::createDecoder()
+{
+    std::string formatString =
+        std::string(reinterpret_cast<const char*>(this->format), 4);
+
+    if(this->compressionID == 3 ||
+       formatString == "mac3" ||
+       formatString == "MAC3")
+    {
+        this->decoder = std::unique_ptr<Decoder>(new MACEDecoder());
+    } else if(formatString == "ima4" || formatString == "IMA4")
+    {
+        this->decoder = std::unique_ptr<Decoder>(new IMA4Decoder());
+    } else if(formatString == "alaw" || formatString == "ALAW")
+    {
+        this->decoder = std::unique_ptr<Decoder>(new ALawDecoder());
+    } else if(formatString == "ulaw" || formatString == "ULAW")
+    {
+        this->decoder = std::unique_ptr<Decoder>(new ULawDecoder());
+    } else
+    {
+        Log::err << "Error: cannot create decoder! " <<
+            "Unsupported compression format: '" << formatString << "' (ID: " <<
+            this->compressionID << ")." << std::endl;
+    }
 }
 
 SndFile::SndFile(std::istream& file, const std::string& fileName)
@@ -227,7 +260,7 @@ bool SndFile::doBufferCommand(std::uint64_t command)
         return false;
     }
 
-    mSoundSampleHeader = readSoundSampleHeader(param2);
+    loadSoundSampleHeader(param2);
     return true;
 }
 
@@ -262,8 +295,10 @@ void SndFile::readSoundSampleData(std::istream& stream, std::vector<std::uint8_t
 }
 
 // Offset from beginning of file, must be in native endianness.
-std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t offset)
+// Returns true on success, false on failure.
+bool SndFile::loadSoundSampleHeader(std::uint16_t offset)
 {
+    // All headers are derived from the standard header.
     std::unique_ptr<SoundSampleHeader> standardHeader(new SoundSampleHeader());
     mFile.seekg(offset, mFile.beg);
 
@@ -280,7 +315,7 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
     {
         Log::err << "Error: sound sample data pointer is not null! Cannot read data." <<
             std::endl;
-        return standardHeader;
+        return true;
     }
 
     if(standardHeader->encode == cStandardSoundHeaderEncode)
@@ -292,8 +327,8 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         // Debugging info.
         Log::verb << *standardHeader << std::endl;
 
-        // Return standard header.
-        return standardHeader;
+        mSoundSampleHeader = std::move(standardHeader);
+        return true;
     } else if(standardHeader->encode == cExtendedSoundHeaderEncode)
     {
         // Extended sound header.
@@ -328,8 +363,8 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         // Debug info.
         Log::verb << *extendedHeader << std::endl;
 
-        // Return extended header.
-        return extendedHeader;
+        mSoundSampleHeader = std::move(extendedHeader);
+        return true;
     } else if(standardHeader->encode == cCompressedSoundHeaderEncode)
     {
         // Compressed sound header
@@ -352,13 +387,13 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         compressedHeader->snthID = readBigValue<decltype(compressedHeader->snthID)>(mFile);
         compressedHeader->sampleSize = readBigValue<decltype(compressedHeader->sampleSize)>(mFile);
 
+        compressedHeader->createDecoder();
+
         // Copy sample data.
-        // Length = numFrames * number of channels (lengthOrChannels) * 34.
-        // See top comment.
-        std::size_t sampleLength =
-            compressedHeader->numFrames *
-            compressedHeader->lengthOrChannels *
-            34;
+        std::size_t sampleLength = compressedHeader->decoder->getCompressedSize(
+                compressedHeader->numFrames,
+                compressedHeader->lengthOrChannels
+        );
 
         // 1 byte per value, since we only figure out endianness when decoding compressed data.
         readSoundSampleData(mFile, compressedHeader->sampleArea, sampleLength, 1);
@@ -366,13 +401,14 @@ std::unique_ptr<SoundSampleHeader> SndFile::readSoundSampleHeader(std::uint16_t 
         // Debug info.
         Log::verb << *compressedHeader << std::endl;
 
-        // Return compressed header.
-        return compressedHeader;
+        mSoundSampleHeader = std::move(compressedHeader);
+        return true;
     }
 
     Log::err << "Error: unrecognized sound sampler header encoding! Cannot convert." <<
         std::endl;
-    return std::unique_ptr<SoundSampleHeader>(new SoundSampleHeader());
+    mSoundSampleHeader = std::move(standardHeader);
+    return false;
 }
 
 // Print parsed data, for debugging.
