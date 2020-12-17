@@ -20,6 +20,7 @@
 #include "SndFile.hpp"
 #include "IMA4Decoder.hpp"
 #include "MACEDecoder.hpp"
+#include "XLawDecoder.hpp"
 
 #include <iomanip>
 #include <cstddef> // For std::size_t
@@ -67,10 +68,9 @@ WAVFile::WAVFile(const SndFile& sndFile, const std::string& WAVFileName)
 
 // Convert std::vector<std::int16_t> native-endian values to
 // std::vector<std::uint8_t> in little-endian.
-std::vector<std::uint8_t> WAVFile::makeSamplesLittleEndian(const std::vector<std::int16_t>& data)
+std::vector<std::uint8_t> WAVFile::serializeSamples(const std::vector<std::int16_t>& data)
 {
-    std::vector<std::uint8_t> convertedData;
-    convertedData.resize(data.size()*16/8);
+    std::vector<std::uint8_t> convertedData(data.size()*16/8);
 
     for(std::size_t i = 0; i < data.size(); ++i)
     {
@@ -85,6 +85,18 @@ std::vector<std::uint8_t> WAVFile::makeSamplesLittleEndian(const std::vector<std
         // MSB goes to largest adress.
         // '>>' makes this platform-independant.
         convertedData[i*2 + 1] = static_cast<std::uint8_t>(unsignedValue >> 8);
+    }
+
+    return convertedData;
+}
+
+std::vector<std::uint8_t> serializeSamples(const std::vector<std::int8_t>& data)
+{
+    std::vector<std::uint8_t> convertedData(data.size());
+
+    for(std::size_t i = 0; i < data.size(); ++i)
+    {
+        convertedData[i] = static_cast<std::uint8_t>(data[i]);
     }
 
     return convertedData;
@@ -244,7 +256,7 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
             std::vector<std::int16_t> decodedSamples = 
                 maceDecoder.decode(sndHeader.sampleArea, mHeader.numChannels);
 
-            return makeSamplesLittleEndian(decodedSamples);
+            return serializeSamples(decodedSamples);
         } else if(formatString == "ima4" || formatString == "IMA4")
         {
             if(mHeader.bitsPerSample != 16)
@@ -258,7 +270,39 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
             std::vector<std::int16_t> decodedSamples = 
                 ima4Decoder.decode(sndHeader.sampleArea, mHeader.numChannels);
 
-            return makeSamplesLittleEndian(decodedSamples);
+            return serializeSamples(decodedSamples);
+        } else if(formatString == "alaw" || formatString == "ALAW")
+        {
+            // I don't know why, but bitsPerSample seems to be 8 for x-law, even though
+            // it decodes into 16-bit samples. Don't crash, since we don't know if this
+            // is relevant.
+            if(mHeader.bitsPerSample != 8)
+            {
+                Log::warn << "Warning: a-law decoding might fail. Sound sample is " <<
+                    mHeader.bitsPerSample << "-bit, when it should be 8-bit!" << std::endl;
+            }
+
+            ALawDecoder aLawDecoder;
+            std::vector<std::int16_t> decodedSamples = 
+                aLawDecoder.decode(sndHeader.sampleArea, mHeader.numChannels);
+
+            return serializeSamples(decodedSamples);
+        } else if(formatString == "ulaw" || formatString == "ULAW")
+        {
+            // I don't know why, but bitsPerSample seems to be 8 for x-law, even though
+            // it decodes into 16-bit samples. Don't crash, since we don't know if this
+            // is relevant.
+            if(mHeader.bitsPerSample != 8)
+            {
+                Log::warn << "Warning: u-law decoding might fail. Sound sample is " <<
+                    mHeader.bitsPerSample << "-bit, when it should be 8-bit!" << std::endl;
+            }
+
+            ULawDecoder uLawDecoder;
+            std::vector<std::int16_t> decodedSamples = 
+                uLawDecoder.decode(sndHeader.sampleArea, mHeader.numChannels);
+
+            return serializeSamples(decodedSamples);
         } else
         {
             Log::err << "Error: cannot decode compressed sound sample! " <<
