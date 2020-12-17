@@ -25,6 +25,8 @@
 class Decoder
 {
 public:
+    virtual ~Decoder() = default;
+
     // Returns size of compressed samples, in bytes.
     virtual std::size_t getCompressedSize(std::size_t numFrames,
         std::size_t numChannels) = 0;
