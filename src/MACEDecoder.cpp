@@ -171,9 +171,9 @@ struct MACEContext
 
 static inline std::int16_t mace_broken_clip_int16(int n)
 {
-    if (n > 32767)
+    if(n > 32767)
         return 32767;
-    else if (n < -32768)
+    else if(n < -32768)
         return -32767;
     else
         return n;
@@ -183,12 +183,12 @@ static std::int16_t read_table(ChannelData* chd, uint8_t val, int tab_idx)
 {
     std::int16_t current;
 
-    if (val < tabs[tab_idx].stride)
+    if(val < tabs[tab_idx].stride)
         current = tabs[tab_idx].tab2[((chd->index & 0x7f0) >> 4) * tabs[tab_idx].stride + val];
     else
         current = - 1 - tabs[tab_idx].tab2[((chd->index & 0x7f0) >> 4)*tabs[tab_idx].stride + 2*tabs[tab_idx].stride-val-1];
 
-    if (( chd->index += tabs[tab_idx].tab1[val]-(chd->index >> 5) ) < 0)
+    if(( chd->index += tabs[tab_idx].tab1[val]-(chd->index >> 5) ) < 0)
         chd->index = 0;
 
     return current;
@@ -201,8 +201,8 @@ MACEDecoder::MACEDecoder()
 
 std::size_t MACEDecoder::getCompressedSize(std::size_t numFrames, std::size_t numChannels)
 {
-    // 3:1 compression of 2-byte samples.
-    return 2 * (numFrames * numChannels) / 3;
+    // 3:1 compression of 2-byte samples into 2-byte packets.
+    return ((numFrames * numChannels) / 3) * 2;
 }
 
 // Decodes MACE 3:1 compressed sound only.
@@ -212,22 +212,25 @@ std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& d
     std::size_t nSamples = 3 * static_cast<int>(data.size()) / numChannels;
     std::vector<std::int16_t> decodedData(nSamples * numChannels);
 
-    if (data.size() % (numChannels * 2) != 0)
+    if(data.size() % (numChannels * 2) != 0)
+    {
         Log::err << "Error: invalid input buffer size for MACE decoding." << std::endl;
+        return decodedData;
+    }
 
     std::int16_t* out = decodedData.data();
 
     MACEContext ctx = {};
 
-    for (std::size_t chan = 0; chan < numChannels; chan++)
-    for (std::size_t j = 0; j < data.size() / (numChannels * 2); j++)
-    for (std::size_t k = 0; k < 2; k++)
+    for(std::size_t chan = 0; chan < numChannels; chan++)
+    for(std::size_t j = 0; j < data.size() / (numChannels * 2); j++)
+    for(std::size_t k = 0; k < 2; k++)
     {
         std::uint8_t pkt = static_cast<std::uint8_t>(data[(chan * 2) + (j * numChannels * 2) + k]);
 
         int val2[3] = { pkt & 7, (pkt >> 3) & 3, pkt >> 5 };
 
-        for (int l = 0; l < 3; l++)
+        for(int l = 0; l < 3; l++)
         {
             std::int16_t current = read_table(&ctx.chd[chan], static_cast<std::uint8_t>(val2[l]), l);
             current = mace_broken_clip_int16(current + ctx.chd[chan].level);

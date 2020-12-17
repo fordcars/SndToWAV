@@ -205,19 +205,19 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
         cmpSndHeader = static_cast<const CompressedSoundSampleHeader*>(&sndHeader);
     }
 
-    // Decode!
+    // Get that sample data!
     if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode ||
         sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
     {
         // Do nothing, sample data already correctly encoded (plain PCM samples,
-        // with interleaved samples if in stereo).
+        // interleaved if stereo).
         return sndHeader.sampleArea;
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
         std::string formatString =
             std::string(reinterpret_cast<const char*>(cmpSndHeader->format), 4);
 
-        // Compressed sound sample headers supports uncompressed sound.
+        // Compressed sound sample headers support uncompressed sound.
         if(cmpSndHeader->compressionID == 0)
         {
             // Uncompressed sound sample, so we do nothing!
@@ -225,76 +225,10 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
         }
 
         // Decode!
-        if(cmpSndHeader->compressionID == 3 ||
-           formatString == "mac3" ||
-           formatString == "MAC3")
-        {
-            if(mHeader.bitsPerSample != 16)
-            {
-                Log::err << "Error: cannot decode MACE 3:1. Sound sample is " <<
-                    mHeader.bitsPerSample << "-bit, when it should be 16-bit!" << std::endl;
-                return sndHeader.sampleArea;
-            }
+        std::vector<std::int16_t> decodedSamples = 
+            cmpSndHeader->decoder->decode(sndHeader.sampleArea, mHeader.numChannels);
 
-            MACEDecoder maceDecoder;
-            std::vector<std::int16_t> decodedSamples = 
-                maceDecoder.decode(sndHeader.sampleArea, mHeader.numChannels);
-
-            return serializeSamples(decodedSamples);
-        } else if(formatString == "ima4" || formatString == "IMA4")
-        {
-            if(mHeader.bitsPerSample != 16)
-            {
-                Log::err << "Error: cannot decode IMA4. Sound sample is " <<
-                    mHeader.bitsPerSample << "-bit, when it should be 16-bit!" << std::endl;
-                return sndHeader.sampleArea;
-            }
-
-            IMA4Decoder ima4Decoder;
-            std::vector<std::int16_t> decodedSamples = 
-                ima4Decoder.decode(sndHeader.sampleArea, mHeader.numChannels);
-
-            return serializeSamples(decodedSamples);
-        } else if(formatString == "alaw" || formatString == "ALAW")
-        {
-            // I don't know why, but bitsPerSample seems to be 8 for x-law, even though
-            // it decodes into 16-bit samples. Don't crash, since we don't know if this
-            // is relevant.
-            if(mHeader.bitsPerSample != 8)
-            {
-                Log::warn << "Warning: a-law decoding might fail. Sound sample is " <<
-                    mHeader.bitsPerSample << "-bit, when it should be 8-bit!" << std::endl;
-            }
-
-            ALawDecoder aLawDecoder;
-            std::vector<std::int16_t> decodedSamples = 
-                aLawDecoder.decode(sndHeader.sampleArea, mHeader.numChannels);
-
-            return serializeSamples(decodedSamples);
-        } else if(formatString == "ulaw" || formatString == "ULAW")
-        {
-            // I don't know why, but bitsPerSample seems to be 8 for x-law, even though
-            // it decodes into 16-bit samples. Don't crash, since we don't know if this
-            // is relevant.
-            if(mHeader.bitsPerSample != 8)
-            {
-                Log::warn << "Warning: u-law decoding might fail. Sound sample is " <<
-                    mHeader.bitsPerSample << "-bit, when it should be 8-bit!" << std::endl;
-            }
-
-            ULawDecoder uLawDecoder;
-            std::vector<std::int16_t> decodedSamples = 
-                uLawDecoder.decode(sndHeader.sampleArea, mHeader.numChannels);
-
-            return serializeSamples(decodedSamples);
-        } else
-        {
-            Log::err << "Error: cannot decode compressed sound sample! " <<
-                "Unsupported compression format: '" << formatString << "' (ID: " <<
-                cmpSndHeader->compressionID << ")." << std::endl;
-
-            return sndHeader.sampleArea;
-        }
+        return serializeSamples(decodedSamples);
     }
 
     // If all else fails.

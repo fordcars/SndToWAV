@@ -148,6 +148,10 @@ void CompressedSoundSampleHeader::createDecoder()
     } else if(formatString == "ulaw" || formatString == "ULAW")
     {
         this->decoder = std::unique_ptr<Decoder>(new ULawDecoder());
+    } else if(this->compressionID == 0)
+    {
+        // Uncompressed sound using the compressed sound header;
+        // no need to create a decoder.
     } else
     {
         Log::err << "Error: cannot create decoder! " <<
