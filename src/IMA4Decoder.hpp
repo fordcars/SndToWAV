@@ -21,6 +21,7 @@
 #include "Decoder.hpp"
 
 #include <cstdint>
+#include <cstddef>
 #include <vector>
 
 const unsigned IMA4_PACKET_LENGTH = 34;
@@ -66,8 +67,11 @@ private:
 public:
     IMA4Decoder();
 
+    std::size_t getCompressedSize(std::size_t numFrames,
+        std::size_t numChannels) override;
+
     std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
-        unsigned numChannels) override;
+        std::size_t numChannels) override;
 };
 
 #endif // IMA4_DECODER_HPP

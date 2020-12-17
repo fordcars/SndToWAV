@@ -58,7 +58,7 @@ public:
     // Array ordered in big-endian, but each cell is in native endianness.
     // AIFFSampleRate is essentially the same value as the standard header
     // sampleRate.
-    std::uint32_t AIFFSampleRate[2] = {0};
+    std::uint32_t AIFFSampleRate[3] = {0};
     std::uint32_t markerChunk = 0;
     std::uint32_t instrumentChunks = 0;
     std::uint32_t AESRecording = 0;
@@ -83,7 +83,7 @@ public:
     // Array ordered in big-endian, but each cell is in native endianness.
     // AIFFSampleRate is essentially the same value as the standard header
     // sampleRate.
-    std::uint32_t AIFFSampleRate[2] = {0};
+    std::uint32_t AIFFSampleRate[3] = {0};
     std::uint32_t markerChunk = 0;
     std::uint8_t format[4] = {0}; // 4-char string.
     std::int32_t futureUse2 = 0;

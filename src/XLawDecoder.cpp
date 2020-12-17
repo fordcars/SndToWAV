@@ -53,8 +53,14 @@ XLawDecoder::XLawDecoder()
     // Do nothing
 }
 
+std::size_t XLawDecoder::getCompressedSize(std::size_t numFrames,
+        std::size_t numChannels)
+{
+    return numFrames * numChannels;
+}
+
 std::vector<std::int16_t> XLawDecoder::decode(const std::vector<std::uint8_t>& data,
-    unsigned numChannels, bool useULaw)
+    std::size_t /* numChannels */, bool useULaw)
 {
     const std::int16_t* xLawToPCM = aLawToPCM; // Get correct table
     std::vector<std::int16_t> decodedSamples(data.size());
@@ -62,18 +68,18 @@ std::vector<std::int16_t> XLawDecoder::decode(const std::vector<std::uint8_t>& d
     if(useULaw)
         xLawToPCM = uLawToPCM;
 
-	for(std::size_t i = 0; i < data.size(); i++)
-	{
-		std::int8_t b = *reinterpret_cast<const std::int8_t*>(&data[i]); // SIGNED!
-		if(b < 0)
-		{
-			// Mirror table and negate output
-			decodedSamples[i] = -xLawToPCM[128 + b];
-		} else
-		{
-			decodedSamples[i] = xLawToPCM[b];
-		}
-	}
+    for(std::size_t i = 0; i < data.size(); i++)
+    {
+        std::int8_t b = *reinterpret_cast<const std::int8_t*>(&data[i]); // SIGNED!
+        if(b < 0)
+        {
+            // Mirror table and negate output
+            decodedSamples[i] = -xLawToPCM[128 + b];
+        } else
+        {
+            decodedSamples[i] = xLawToPCM[b];
+        }
+    }
 
     return decodedSamples;
 }
@@ -85,7 +91,7 @@ ALawDecoder::ALawDecoder()
 }
 
 std::vector<std::int16_t> ALawDecoder::decode(const std::vector<std::uint8_t>& data,
-    unsigned numChannels)
+    std::size_t numChannels)
 {
     return XLawDecoder::decode(data, numChannels, false);
 }
@@ -97,7 +103,7 @@ ULawDecoder::ULawDecoder()
 }
 
 std::vector<std::int16_t> ULawDecoder::decode(const std::vector<std::uint8_t>& data,
-    unsigned numChannels)
+    std::size_t numChannels)
 {
     return XLawDecoder::decode(data, numChannels, true);
 }

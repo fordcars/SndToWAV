@@ -18,7 +18,10 @@
 #ifndef MACE_DECODER_HPP
 #define MACE_DECODER_HPP
 
+#include "Decoder.hpp"
+
 #include <vector>
+#include <cstddef>
 #include <cstdint>
 
 class MACEDecoder : public Decoder
@@ -26,11 +29,11 @@ class MACEDecoder : public Decoder
 public:
     MACEDecoder();
 
-    static std::size_t getSampleSize(std::size_t numFrames,
+    std::size_t getCompressedSize(std::size_t numFrames,
         std::size_t numChannels) override;
 
     std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
-        unsigned numChannels) override;
+        std::size_t numChannels) override;
 };
 
 #endif // MACE_DECODER_HPP

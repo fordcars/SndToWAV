@@ -199,14 +199,14 @@ MACEDecoder::MACEDecoder()
     // Do nothing
 }
 
-std::size_t MACEDecoder::getSampleSize(std::size_t numFrames, std::size_t numChannels)
+std::size_t MACEDecoder::getCompressedSize(std::size_t numFrames, std::size_t numChannels)
 {
-    return numFrames * numChannels;
+    return (numFrames * numChannels) / 3;
 }
 
 // Decodes MACE 3:1 compressed sound only.
 std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& data,
-    unsigned numChannels)
+    std::size_t numChannels)
 {
     std::size_t nSamples = 3 * static_cast<int>(data.size()) / numChannels;
     std::vector<std::int16_t> decodedData(nSamples * numChannels);
@@ -218,9 +218,9 @@ std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& d
 
     MACEContext ctx = {};
 
-    for (int chan = 0; chan < numChannels; chan++)
+    for (std::size_t chan = 0; chan < numChannels; chan++)
     for (std::size_t j = 0; j < data.size() / (numChannels * 2); j++)
-    for (int k = 0; k < 2; k++)
+    for (std::size_t k = 0; k < 2; k++)
     {
         std::uint8_t pkt = static_cast<std::uint8_t>(data[(chan * 2) + (j * numChannels * 2) + k]);
 

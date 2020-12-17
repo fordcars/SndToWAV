@@ -20,15 +20,17 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <vector>
 
 class Decoder
 {
 public:
-    virtual static std::size_t getSampleSize(std::size_t numFrames,
+    // Returns size of compressed samples, in bytes.
+    virtual std::size_t getCompressedSize(std::size_t numFrames,
         std::size_t numChannels) = 0;
 
     virtual std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
-        unsigned numChannels) = 0;
+        std::size_t numChannels) = 0;
 };
 
 #endif // DECODER_HPP

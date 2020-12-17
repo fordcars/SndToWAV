@@ -90,18 +90,6 @@ std::vector<std::uint8_t> WAVFile::serializeSamples(const std::vector<std::int16
     return convertedData;
 }
 
-std::vector<std::uint8_t> serializeSamples(const std::vector<std::int8_t>& data)
-{
-    std::vector<std::uint8_t> convertedData(data.size());
-
-    for(std::size_t i = 0; i < data.size(); ++i)
-    {
-        convertedData[i] = static_cast<std::uint8_t>(data[i]);
-    }
-
-    return convertedData;
-}
-
 // Returns true on success, false on failure.
 bool WAVFile::populateHeader(const SndFile& sndFile)
 {
@@ -210,13 +198,9 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
 {
     // Could definitely do this cleaner.
     const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
-    const ExtendedSoundSampleHeader* extSndHeader = nullptr;
     const CompressedSoundSampleHeader* cmpSndHeader = nullptr;
 
-    if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
-    {
-        extSndHeader = static_cast<const ExtendedSoundSampleHeader*>(&sndHeader);
-    } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
+    if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
         cmpSndHeader = static_cast<const CompressedSoundSampleHeader*>(&sndHeader);
     }
@@ -320,7 +304,6 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
 // Returns true on success, false on failure.
 bool WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile) const
 {
-    const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
     std::vector<std::uint8_t> decodedSampleData = decodeSampleData(sndFile);
 
     // Snd only supports 8-bit or 16-bit samples (I think).
@@ -362,4 +345,6 @@ bool WAVFile::convertSnd(const SndFile& sndFile, const std::string& WAVFileName)
 
     writeBinaryHeader(outputFile);
     writeSampleData(outputFile, sndFile);
+
+    return true;
 }

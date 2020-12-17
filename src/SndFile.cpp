@@ -184,6 +184,8 @@ bool SndFile::parse()
         Log::err << "Error: bufferCmd not found in snd file! Cannot convert." << std::endl;
         return false;
     }
+
+    return true;
 }
 
 // Finds first instance of cmdName, and returns entire command.
@@ -208,7 +210,7 @@ bool SndFile::doBufferCommand(std::uint64_t command)
     // Truncate MSbs.
     // (Already in native endianness.)
     std::uint16_t cmdName = static_cast<std::uint16_t>(command >> 48);
-    std::uint16_t param1 = static_cast<std::uint16_t>(command >> 32);
+    // First param (unused): param1 = static_cast<std::uint16_t>(command >> 32);
     std::uint16_t param2 = static_cast<std::uint16_t>(command);
 
     if(cmdName != BUFFER_CMD)
@@ -226,6 +228,7 @@ bool SndFile::doBufferCommand(std::uint64_t command)
     }
 
     mSoundSampleHeader = readSoundSampleHeader(param2);
+    return true;
 }
 
 const SoundSampleHeader& SndFile::getSoundSampleHeader() const
