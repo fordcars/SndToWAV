@@ -18,12 +18,14 @@
 #ifndef IMA4_DECODER_HPP
 #define IMA4_DECODER_HPP
 
+#include "Decoder.hpp"
+
 #include <cstdint>
 #include <vector>
 
 const unsigned IMA4_PACKET_LENGTH = 34;
 
-class IMA4Decoder
+class IMA4Decoder : public Decoder
 {
 private:
     template<class T>
@@ -64,7 +66,8 @@ private:
 public:
     IMA4Decoder();
 
-    std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data, unsigned numChannels);
+    std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
+        unsigned numChannels) override;
 };
 
 #endif // IMA4_DECODER_HPP

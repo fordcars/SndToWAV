@@ -15,22 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with SndToWAV. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef MACE_DECODER_HPP
-#define MACE_DECODER_HPP
+#ifndef DECODER_HPP
+#define DECODER_HPP
 
-#include <vector>
 #include <cstdint>
+#include <cstddef>
 
-class MACEDecoder : public Decoder
+class Decoder
 {
 public:
-    MACEDecoder();
+    virtual static std::size_t getSampleSize(std::size_t numFrames,
+        std::size_t numChannels) = 0;
 
-    static std::size_t getSampleSize(std::size_t numFrames,
-        std::size_t numChannels) override;
-
-    std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
-        unsigned numChannels) override;
+    virtual std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
+        unsigned numChannels) = 0;
 };
 
-#endif // MACE_DECODER_HPP
+#endif // DECODER_HPP

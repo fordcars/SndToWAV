@@ -199,6 +199,11 @@ MACEDecoder::MACEDecoder()
     // Do nothing
 }
 
+std::size_t MACEDecoder::getSampleSize(std::size_t numFrames, std::size_t numChannels)
+{
+    return numFrames * numChannels;
+}
+
 // Decodes MACE 3:1 compressed sound only.
 std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& data,
     unsigned numChannels)
