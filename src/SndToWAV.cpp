@@ -89,10 +89,17 @@ bool SndToWAV::convertResourceData(char* resourceData, std::size_t resourceSize,
 bool SndToWAV::extract(const std::string& resourceFilePath, unsigned int resourceID)
 {
     RESX::File resourceFile(resourceFilePath, mResourceFileBlockSize);
-    std::size_t resourceSize;
+    std::size_t resourceSize = 0;
     std::unique_ptr<char, RESX::freeDelete> resourceData =
         resourceFile.loadResourceFork(0).getResourceData("snd ", resourceID, &resourceSize);
 
+    if(resourceData == nullptr)
+    {
+        Log::err << "Error: could not find sound with ID '" << std::to_string(resourceID) <<
+            "' in '" << resourceFilePath << "'!" << std::endl;
+        return false;
+    }
+    
     return convertResourceData(resourceData.get(), resourceSize, std::to_string(resourceID));
 }
 
@@ -104,6 +111,13 @@ bool SndToWAV::extract(const std::string& resourceFilePath, const std::string& r
     std::size_t resourceSize;
     std::unique_ptr<char, RESX::freeDelete> resourceData =
         resourceFile.loadResourceFork(0).getResourceData("snd ", resourceName, &resourceSize);
+
+    if(resourceData == nullptr)
+    {
+        Log::err << "Error: could not find sound '" << resourceName << "' in '" <<
+            resourceFilePath << "'!" << std::endl;
+        return false;
+    }
 
     return convertResourceData(resourceData.get(), resourceSize, resourceName);
 }
