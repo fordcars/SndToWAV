@@ -32,6 +32,7 @@ private:
 protected:
     void setLittleEndianData(const std::vector<std::int16_t>& samples);
     void setLittleEndianData(const std::vector<std::int8_t>& samples);
+    void setLittleEndianData(const std::vector<std::uint8_t>& data);
 
 public:
     virtual ~Decoder() = default;

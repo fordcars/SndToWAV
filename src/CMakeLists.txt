@@ -42,6 +42,7 @@ set(SNDTOWAV_SOURCES
     ${SNDTOWAV_SOURCE_DIR}/SndFile.cpp
 	${SNDTOWAV_SOURCE_DIR}/WAVFile.cpp
     ${SNDTOWAV_SOURCE_DIR}/Decoder.cpp
+    ${SNDTOWAV_SOURCE_DIR}/NullDecoder.cpp
     ${SNDTOWAV_SOURCE_DIR}/IMA4Decoder.cpp
     ${SNDTOWAV_SOURCE_DIR}/MACEDecoder.cpp
     ${SNDTOWAV_SOURCE_DIR}/XLawDecoder.cpp
@@ -53,6 +54,7 @@ set(SNDTOWAV_HEADERS
     ${SNDTOWAV_SOURCE_DIR}/SndFile.hpp
 	${SNDTOWAV_SOURCE_DIR}/WAVFile.hpp
     ${SNDTOWAV_SOURCE_DIR}/Decoder.hpp
+    ${SNDTOWAV_SOURCE_DIR}/NullDecoder.hpp
     ${SNDTOWAV_SOURCE_DIR}/IMA4Decoder.hpp
     ${SNDTOWAV_SOURCE_DIR}/MACEDecoder.hpp
     ${SNDTOWAV_SOURCE_DIR}/XLawDecoder.hpp

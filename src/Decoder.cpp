@@ -53,6 +53,12 @@ void Decoder::setLittleEndianData(const std::vector<std::int8_t>& samples)
     mLittleEndianData = std::vector<std::uint8_t>(samples.begin(), samples.end());
 }
 
+// For raw data.
+void Decoder::setLittleEndianData(const std::vector<std::uint8_t>& data)
+{
+    mLittleEndianData = data;
+}
+
 const std::vector<std::uint8_t> Decoder::getLittleEndianData() const
 {
     return mLittleEndianData;

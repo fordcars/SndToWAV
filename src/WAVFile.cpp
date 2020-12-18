@@ -221,7 +221,7 @@ bool WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile
         // Note: 16-bit samples are normally signed, but that doesn't
         // change anything here.
         writeLittleArray(outputStream,
-            reinterpret_cast<const std::uint16_t*>(decodedSampleData.data()), decodedSampleData.size() / 2);
+            decodedSampleData.data(), decodedSampleData.size());
         return true;
     }
 
