@@ -29,13 +29,12 @@ class XLawDecoder : public Decoder
 protected:
     XLawDecoder();
 
-    std::size_t getEncodedSize(std::size_t numPackets) override;
+    std::size_t getEncodedSize(std::size_t numPackets) const override;
+    std::size_t getDecodedSize(std::size_t numPackets) const override;
 
-    std::size_t getDecodedSize(std::size_t numPackets) override;
+    unsigned getBitsPerSample() const override;
 
-    unsigned getBitsPerSample() override;
-
-    std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
+    void decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels, bool useULaw);
 };
 
@@ -43,7 +42,7 @@ class ALawDecoder : public XLawDecoder
 {
 public:
     ALawDecoder();
-    std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
+    void decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) override;
 };
 
@@ -52,7 +51,7 @@ class ULawDecoder : public XLawDecoder
 {
 public:
     ULawDecoder();
-    std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
+    void decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) override;
 };
 

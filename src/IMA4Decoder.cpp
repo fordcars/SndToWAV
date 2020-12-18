@@ -162,23 +162,23 @@ std::vector<std::int16_t> IMA4Decoder::decodeStereoFrame(const std::uint8_t left
     return stereoSamples;
 }
 
-std::size_t IMA4Decoder::getEncodedSize(std::size_t numPackets)
+std::size_t IMA4Decoder::getEncodedSize(std::size_t numPackets) const
 {
     return numPackets * IMA4_PACKET_LENGTH;
 }
 
-std::size_t IMA4Decoder::getDecodedSize(std::size_t numPackets)
+std::size_t IMA4Decoder::getDecodedSize(std::size_t numPackets) const
 {
     return numPackets * 128;
 }
 
-unsigned IMA4Decoder::getBitsPerSample()
+unsigned IMA4Decoder::getBitsPerSample() const
 {
     return 16;
 }
 
-// Returns the native-endian decoded sound samples (interleaved if stereo).
-std::vector<std::int16_t> IMA4Decoder::decode(const std::vector<std::uint8_t>& data,
+// Decodes sound samples, and interleaves them if stereo.
+void IMA4Decoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t numChannels)
 {
     std::vector<std::int16_t> decodedSamples;
@@ -197,7 +197,7 @@ std::vector<std::int16_t> IMA4Decoder::decode(const std::vector<std::uint8_t>& d
     {
         Log::err << "Error: invalid number of channels given (" << numChannels << "). " <<
             " Can only decode IMA4 with 1 (mono) or 2 (stereo) channels!" << std::endl;
-        return decodedSamples;
+        return;
     }
 
     if(numChannels == 1)
@@ -227,5 +227,6 @@ std::vector<std::int16_t> IMA4Decoder::decode(const std::vector<std::uint8_t>& d
         }
     }
 
-    return decodedSamples;
+    setLittleEndianData(decodedSamples);
 }
+

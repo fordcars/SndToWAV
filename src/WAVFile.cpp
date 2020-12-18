@@ -66,30 +66,6 @@ WAVFile::WAVFile(const SndFile& sndFile, const std::string& WAVFileName)
     convertSnd(sndFile, WAVFileName);
 }
 
-// Convert std::vector<std::int16_t> native-endian values to
-// std::vector<std::uint8_t> in little-endian.
-std::vector<std::uint8_t> WAVFile::serializeSamples(const std::vector<std::int16_t>& data)
-{
-    std::vector<std::uint8_t> convertedData(data.size()*16/8);
-
-    for(std::size_t i = 0; i < data.size(); ++i)
-    {
-        // Signed to unsigned:
-        std::uint16_t unsignedValue =
-            *reinterpret_cast<const std::uint16_t*>( &(data[i]) );
-
-        // LSB goes to smallest adress.
-        // '&' makes this platform-independant.
-        convertedData[i*2] = static_cast<std::uint8_t>(unsignedValue & 0x00FF);
-        
-        // MSB goes to largest adress.
-        // '>>' makes this platform-independant.
-        convertedData[i*2 + 1] = static_cast<std::uint8_t>(unsignedValue >> 8);
-    }
-
-    return convertedData;
-}
-
 // Returns true on success, false on failure.
 bool WAVFile::populateHeader(const SndFile& sndFile)
 {
@@ -115,8 +91,9 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
         sampleDataSize = extSndHeader->numFrames * 2 * sndHeader.lengthOrChannels;
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
-                                                        // Uncompressed IMA4 generates 128 bytes/packet. Stereo has interleaved packets.
-                                                        sampleDataSize = cmpSndHeader->numFrames * 128 * sndHeader.lengthOrChannels;
+        sampleDataSize = cmpSndHeader->decoder->getDecodedSize(
+            cmpSndHeader->numFrames * sndHeader.lengthOrChannels
+        );
     }
 
     mHeader.chunkSize = 36 + sampleDataSize;
@@ -186,8 +163,7 @@ void WAVFile::writeBinaryHeader(std::ostream& outputStream) const
     writeLittleValue(outputStream, mHeader.subchunk2Size);
 }
 
-// We return unsigned bytes for consistency. It's just plain data, we don't
-// care what it represents.
+// We return unsigned bytes (plain data).
 // Inputted multi-byte samples must be in native-endianness, unless it is compressed data.
 // --- Compressed data must be in the original endianness.
 // Decoded multi-byte samples are in native-endianness.
@@ -211,9 +187,6 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
         return sndHeader.sampleArea;
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
-        std::string formatString =
-            std::string(reinterpret_cast<const char*>(cmpSndHeader->format), 4);
-
         // Compressed sound sample headers support uncompressed sound.
         if(cmpSndHeader->compressionID == 0)
         {
@@ -222,10 +195,9 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
         }
 
         // Decode!
-        std::vector<std::int16_t> decodedSamples = 
-            cmpSndHeader->decoder->decode(sndHeader.sampleArea, mHeader.numChannels);
+        cmpSndHeader->decoder->decode(sndHeader.sampleArea, mHeader.numChannels);
 
-        return serializeSamples(decodedSamples);
+        return cmpSndHeader->decoder->getLittleEndianData();
     }
 
     // If all else fails.

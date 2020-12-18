@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs)
             std::hex << rhs.samplePtr << std::endl <<
 
         " -- Length or num. channels: " << std::dec << rhs.lengthOrChannels << std::endl <<
-        " -- Real sample length: " << rhs.sampleArea.size() << std::endl <<
+        " -- Total sample area size: " << rhs.sampleArea.size() << std::endl <<
         " -- Sample rate: " << "0x" << std::setw(8) << std::hex <<
             rhs.sampleRate << std::dec << " (" << fixedSampleRateToFloat(rhs.sampleRate) <<
             " Hz)" << std::endl <<

@@ -53,22 +53,23 @@ XLawDecoder::XLawDecoder()
     // Do nothing
 }
 
-std::size_t XLawDecoder::getEncodedSize(std::size_t numPackets)
+std::size_t XLawDecoder::getEncodedSize(std::size_t numPackets) const
 {
     return numPackets * 1; // 1 byte per packet.
 }
 
-std::size_t XLawDecoder::getDecodedSize(std::size_t numPackets)
+std::size_t XLawDecoder::getDecodedSize(std::size_t numPackets) const
 {
-    return numPackets;
+    // Each packets decodes into a 2-byte sample.
+    return numPackets * 2;
 }
 
-unsigned XLawDecoder::getBitsPerSample()
+unsigned XLawDecoder::getBitsPerSample() const
 {
     return 16;
 }
 
-std::vector<std::int16_t> XLawDecoder::decode(const std::vector<std::uint8_t>& data,
+void XLawDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t /* numChannels */, bool useULaw)
 {
     const std::int16_t* xLawToPCM = aLawToPCM; // Get correct table
@@ -90,7 +91,7 @@ std::vector<std::int16_t> XLawDecoder::decode(const std::vector<std::uint8_t>& d
         }
     }
 
-    return decodedSamples;
+    setLittleEndianData(decodedSamples);
 }
 
 /* ALawDecoder */
@@ -99,10 +100,10 @@ ALawDecoder::ALawDecoder()
     // Do nothing
 }
 
-std::vector<std::int16_t> ALawDecoder::decode(const std::vector<std::uint8_t>& data,
+void ALawDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t numChannels)
 {
-    return XLawDecoder::decode(data, numChannels, false);
+    XLawDecoder::decode(data, numChannels, false);
 }
 
 /* ULawDecoder */
@@ -111,9 +112,9 @@ ULawDecoder::ULawDecoder()
     // Do nothing
 }
 
-std::vector<std::int16_t> ULawDecoder::decode(const std::vector<std::uint8_t>& data,
+void ULawDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t numChannels)
 {
-    return XLawDecoder::decode(data, numChannels, true);
+    XLawDecoder::decode(data, numChannels, true);
 }
 

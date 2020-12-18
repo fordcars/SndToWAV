@@ -24,20 +24,31 @@
 
 class Decoder
 {
+private:
+    std::vector<std::uint8_t> mLittleEndianData;
+
+    static std::vector<uint8_t> serializeToLittleEndian(const std::vector<std::int16_t>& data);
+
+protected:
+    void setLittleEndianData(const std::vector<std::int16_t>& samples);
+    void setLittleEndianData(const std::vector<std::int8_t>& samples);
+
 public:
     virtual ~Decoder() = default;
 
     // Returns size of compressed samples, in bytes.
-    virtual std::size_t getEncodedSize(std::size_t numPackets) = 0;
+    virtual std::size_t getEncodedSize(std::size_t numPackets) const = 0;
 
     // Returns size of uncompressed samples, in bytes.
-    virtual std::size_t getDecodedSize(std::size_t numPackets) = 0;
+    virtual std::size_t getDecodedSize(std::size_t numPackets) const = 0;
 
     // Bits per uncompressed sample.
-    virtual unsigned getBitsPerSample() = 0;
+    virtual unsigned getBitsPerSample() const = 0;
 
-    virtual std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
+    virtual void decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) = 0;
+
+    const std::vector<std::uint8_t> getLittleEndianData() const;
 };
 
 #endif // DECODER_HPP

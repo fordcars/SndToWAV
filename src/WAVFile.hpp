@@ -52,6 +52,8 @@ public:
 class WAVFile
 {
 private:
+    WAVHeader mHeader;
+
     // Safe endian.
     // littleStream is a little-endian output stream.
     template<class T>
@@ -83,10 +85,6 @@ private:
             littleStream.write(reinterpret_cast<const char*>(&little), sizeof(T));
         }
     }
-
-    static std::vector<std::uint8_t> serializeSamples(const std::vector<std::int16_t>& data);
-
-    WAVHeader mHeader;
 
     bool populateHeader(const SndFile& sndFile);
     void writeBinaryHeader(std::ostream& outputStream) const;

@@ -29,13 +29,12 @@ class MACEDecoder : public Decoder
 public:
     MACEDecoder();
 
-    std::size_t getEncodedSize(std::size_t numPackets) override;
+    std::size_t getEncodedSize(std::size_t numPackets) const override;
+    std::size_t getDecodedSize(std::size_t numPackets) const override;
 
-    std::size_t getDecodedSize(std::size_t numPackets) override;
+    unsigned getBitsPerSample() const override;
 
-    unsigned getBitsPerSample() override;
-
-    std::vector<std::int16_t> decode(const std::vector<std::uint8_t>& data,
+    void decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) override;
 };
 

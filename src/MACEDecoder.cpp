@@ -199,32 +199,33 @@ MACEDecoder::MACEDecoder()
     // Do nothing
 }
 
-std::size_t MACEDecoder::getEncodedSize(std::size_t numPackets)
+std::size_t MACEDecoder::getEncodedSize(std::size_t numPackets) const
 {
     return numPackets * 2; // 2 bytes per packet
 }
 
-std::size_t MACEDecoder::getDecodedSize(std::size_t numPackets)
+std::size_t MACEDecoder::getDecodedSize(std::size_t numPackets) const
 {
-    return numPackets * 3;
+    // 6x 8-bit samples per packet.
+    return numPackets * 6 * 1;
 }
 
-unsigned MACEDecoder::getBitsPerSample()
+unsigned MACEDecoder::getBitsPerSample() const
 {
-    return 16;
+    return 8;
 }
 
 // Decodes MACE 3:1 compressed sound only.
-std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& data,
+void MACEDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t numChannels)
 {
-    std::size_t nSamples = 3 * static_cast<int>(data.size()) / numChannels;
-    std::vector<std::int16_t> decodedData(nSamples * numChannels);
+    std::size_t nSamples = 3 * static_cast<int>(data.size());
+    std::vector<std::int16_t> decodedData(nSamples);
 
     if(data.size() % (numChannels * 2) != 0)
     {
-        Log::err << "Error: invalid input buffer size for MACE decoding." << std::endl;
-        return decodedData;
+        Log::err << "Error: cannot decode MACE; input buffer has an odd length!" << std::endl;
+        return;
     }
 
     std::int16_t* out = decodedData.data();
@@ -251,5 +252,5 @@ std::vector<std::int16_t> MACEDecoder::decode(const std::vector<std::uint8_t>& d
     }
 
     assert(out == decodedData.data() + decodedData.size());
-    return decodedData;
+    setLittleEndianData(decodedData);
 }
