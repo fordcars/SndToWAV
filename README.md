@@ -45,5 +45,5 @@ The executable will be in the `bin` directory.
     If no ID or name is specified, will extract all sounds from the resource fork.
 
 # Additional credits
-* [jorio](https://github.com/jorio) and [ffmpeg](https://ffmpeg.org/) for MACE decoding.
-* [jorio](https://github.com/jorio) for μ-law and a-law decoding.
+* [jorio](https://github.com/jorio) and [ffmpeg](https://ffmpeg.org/) for MACE decoding. See [MACEDecoder.cpp](https://github.com/fordcars/SndToWAV/blob/main/src/MACEDecoder.cpp) for copyright and license notices.
+* [jorio](https://github.com/jorio) for μ-law and a-law decoding. See [XLawDecoder.cpp](https://github.com/fordcars/SndToWAV/blob/main/src/XLawDecoder.cpp) for copyright and license notices.
