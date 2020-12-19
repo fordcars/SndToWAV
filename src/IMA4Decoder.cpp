@@ -17,7 +17,7 @@
 
 #include "IMA4Decoder.hpp"
 #include "Log.hpp"
-#include "SndToWAV.hpp"
+#include "Utils.hpp"
 
 #include <cstddef> // For std::size_t
 #include <cmath> // For floor()
@@ -108,8 +108,8 @@ std::int16_t IMA4Decoder::processNibble(std::uint8_t nibble)
 // --- https://stackoverflow.com/questions/2130831/decoding-ima4-audio-format
 std::vector<std::int16_t> IMA4Decoder::decodeFrame(const std::uint8_t frame[IMA4_PACKET_LENGTH])
 {
-    // Header is first 2 Big-endian bytes.
-    std::uint16_t header = SndToWAV::makeBigEndianNative(
+    // Header is the first 2 bytes, in Big-endian.
+    std::uint16_t header = Utils::makeBigEndianNative(
         *reinterpret_cast<const std::uint16_t*>(frame)
     );
 

@@ -22,28 +22,6 @@
 
 #include <sstream>
 
-#ifdef USE_UNIVERSAL_ENDIANNESS_HACK
-    // Is not guaranteed to work on all compilers.
-    // From David Cournapeau
-    // (https://stackoverflow.com/questions/1001307/detecting-endianness-programmatically-in-a-c-program)
-    static bool isMachineLittleEndianHack()
-    {
-        union {
-            uint32_t i;
-            char c[4];
-        } bint = {0x01020304};
-
-        return !(bint.c[0] == 1);
-    }
-
-    const bool SndToWAV::mMachineIsLittleEndian = isMachineLittleEndianHack();
-#elif defined(ON_LITTLE_ENDIAN_MACHINE)
-    const bool SndToWAV::mMachineIsLittleEndian = true;
-#else
-    // Big-endian machine assumed, don't change endianness!
-    const bool SndToWAV::mMachineIsLittleEndian = false;
-#endif /* USE_UNIVERSAL_ENDIANNESS_HACK*/
-
 // Block size is often 4096 bytes.
 SndToWAV::SndToWAV(std::size_t resourceFileBlockSize)
     : mResourceFileBlockSize(resourceFileBlockSize)

@@ -37,27 +37,30 @@ add_subdirectory(
 
 set(SNDTOWAV_SOURCES
 	${SNDTOWAV_SOURCE_DIR}/main.cpp
-    ${SNDTOWAV_SOURCE_DIR}/Log.cpp
     ${SNDTOWAV_SOURCE_DIR}/SndToWAV.cpp
+    ${SNDTOWAV_SOURCE_DIR}/Log.cpp
     ${SNDTOWAV_SOURCE_DIR}/SndFile.cpp
-	${SNDTOWAV_SOURCE_DIR}/WAVFile.cpp
+    ${SNDTOWAV_SOURCE_DIR}/SoundSampleHeader.cpp
     ${SNDTOWAV_SOURCE_DIR}/Decoder.cpp
     ${SNDTOWAV_SOURCE_DIR}/NullDecoder.cpp
     ${SNDTOWAV_SOURCE_DIR}/IMA4Decoder.cpp
     ${SNDTOWAV_SOURCE_DIR}/MACEDecoder.cpp
     ${SNDTOWAV_SOURCE_DIR}/XLawDecoder.cpp
+	${SNDTOWAV_SOURCE_DIR}/WAVFile.cpp
 )
 
 set(SNDTOWAV_HEADERS
-    ${SNDTOWAV_SOURCE_DIR}/Log.hpp
     ${SNDTOWAV_SOURCE_DIR}/SndToWAV.hpp
+    ${SNDTOWAV_SOURCE_DIR}/Log.hpp
+    ${SNDTOWAV_SOURCE_DIR}/Utils.hpp
     ${SNDTOWAV_SOURCE_DIR}/SndFile.hpp
-	${SNDTOWAV_SOURCE_DIR}/WAVFile.hpp
+    ${SNDTOWAV_SOURCE_DIR}/SoundSampleHeader.hpp
     ${SNDTOWAV_SOURCE_DIR}/Decoder.hpp
     ${SNDTOWAV_SOURCE_DIR}/NullDecoder.hpp
     ${SNDTOWAV_SOURCE_DIR}/IMA4Decoder.hpp
     ${SNDTOWAV_SOURCE_DIR}/MACEDecoder.hpp
     ${SNDTOWAV_SOURCE_DIR}/XLawDecoder.hpp
+	${SNDTOWAV_SOURCE_DIR}/WAVFile.hpp
 )
 
 if(NOT CMAKE_BUILD_TYPE)

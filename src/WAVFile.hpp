@@ -18,12 +18,12 @@
 #ifndef WAV_FILE_HPP
 #define WAV_FILE_HPP
 
+#include "Utils.hpp"
+
 #include <ostream>
 #include <string>
 #include <cstdint> // Fixed-width types
 #include <vector>
-
-#include "SndToWAV.hpp"
 
 class WAVHeader
 {
@@ -59,7 +59,7 @@ private:
     template<class T>
     static void writeLittleValue(std::ostream& littleStream, T value)
     {
-        T little = SndToWAV::safeLittleEndian(value);
+        T little = Utils::safeLittleEndian(value);
         littleStream.write(reinterpret_cast<const char*>(&little), sizeof(T));
     }
 
@@ -69,7 +69,7 @@ private:
     template<class T>
     static T writeLittleValue(std::ostream& littleStream, T value, std::size_t length)
     {
-        T little = SndToWAV::safeLittleEndian(value);
+        T little = Utils::safeLittleEndian(value);
         
         littleStream.write(reinterpret_cast<const char*>(&little), length);
     }
@@ -81,7 +81,7 @@ private:
     {
         for(std::size_t i = 0; i < length; ++i)
         {
-            T little = SndToWAV::safeLittleEndian(values[i]);
+            T little = Utils::safeLittleEndian(values[i]);
             littleStream.write(reinterpret_cast<const char*>(&little), sizeof(T));
         }
     }
