@@ -18,11 +18,35 @@
 // Use this pass-through class for uncompressed sound.
 
 #include "NullDecoder.hpp"
+#include "Log.hpp"
 
 NullDecoder::NullDecoder(unsigned bitsPerSample)
     : mBitsPerSample(bitsPerSample)
 {
 
+}
+
+// Big-endian std::vector<std::uint8_t> to native-endian
+// std::vector<std::int16_t>.
+std::vector<std::int16_t> NullDecoder::bigDataTo16BitSamples(
+    const std::vector<std::uint8_t>& data)
+{
+    std::vector<std::int16_t> samples(data.size()/2);
+
+    if(data.size()%2 != 0)
+    {
+        Log::err << "Error: 16-bit samples do not contain an even number " <<
+            "of bytes!" << std::endl;
+        return samples;
+    }
+
+    for(std::size_t i = 0; i < data.size(); i += 2)
+    {
+        // Because of << and &, this is platform-independant.
+        samples[i] = (data[i] << 8) & data[i+1];
+    }
+
+    return samples;
 }
 
 // For uncompressed sound, numPackets = number of samples.
@@ -44,9 +68,24 @@ unsigned NullDecoder::getBitsPerSample() const
     return mBitsPerSample;
 }
 
-void NullDecoder::decode(const std::vector<std::uint8_t>& data,
+// data is Big-endian!
+bool NullDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t /* numChannels */)
 {
-    setLittleEndianData(data);
+    if(mBitsPerSample == 8)
+    {
+        setLittleEndianData(data);
+        return true;
+    } else if(mBitsPerSample == 16)
+    {
+        // Convert the Big-endian sample data to little-endian samples.
+        setLittleEndianData(
+            bigDataTo16BitSamples(data)
+        );
+    }
+
+    Log::err << "Error: " << mBitsPerSample << "-bit samples not supported " <<
+        "for uncompressed sound!" << std::endl;
+    return false;
 }
 

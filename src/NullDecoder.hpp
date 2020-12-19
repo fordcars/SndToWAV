@@ -27,6 +27,9 @@
 class NullDecoder : public Decoder
 {
 private:
+    static std::vector<std::int16_t> bigDataTo16BitSamples(
+        const std::vector<std::uint8_t>& data);
+
     unsigned mBitsPerSample;
 
 public:
@@ -37,7 +40,7 @@ public:
 
     unsigned getBitsPerSample() const override;
 
-    void decode(const std::vector<std::uint8_t>& data,
+    bool decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) override;
 };
 
