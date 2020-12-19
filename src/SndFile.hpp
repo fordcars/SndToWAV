@@ -153,6 +153,7 @@ private:
     std::vector<std::uint64_t> mSoundData; // Filled when interpreting bufferCmd.
 
     bool parse();
+    bool decode();
     std::uint64_t findSoundCommand(std::uint16_t cmdName) const;
     bool doBufferCommand(std::uint64_t command);
 
@@ -160,8 +161,6 @@ private:
     void loadSampleData(std::size_t offset, std::size_t sampleDataLength);
     void createDecompressionDecoder(const std::string& compressionFormatString,
         int compressionID);
-
-    friend std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs);
 
 public:
     static const unsigned char cStandardSoundHeaderEncode;
@@ -172,6 +171,8 @@ public:
 
     const SoundSampleHeader& getSoundSampleHeader() const;
     const Decoder& getDecoder() const;
+
+    friend std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs);
 };
 
 #endif // SND_FILE_HPP

@@ -136,6 +136,7 @@ SndFile::SndFile(std::istream& file, const std::string& fileName)
     , mFile(file)
 {
     parse();
+    decode();
 }
 
 // Parse the current snd file.
@@ -184,16 +185,42 @@ bool SndFile::parse()
     // Immediately interpret bufferCmd if present.
     // We only interpret the first bufferCmd, so watchout if there is more than one!
     std::uint64_t fullBufferCmd = findSoundCommand(BUFFER_CMD);
-
     if(fullBufferCmd != 0)
-        doBufferCommand(fullBufferCmd);
-    else
     {
-        Log::err << "Error: bufferCmd not found in snd file! Cannot convert." << std::endl;
+        return doBufferCommand(fullBufferCmd);
+    }
+
+    Log::err << "Error: bufferCmd not found in snd file! Cannot convert." << std::endl;
+    return false;
+}
+
+// Call after parsing!
+bool SndFile::decode()
+{
+    if(mDecoder == nullptr)
+    {
+        Log::err << "Error: decoder was not created! Cannot decode." << std::endl;
         return false;
     }
 
-    return true;
+    if(mSoundSampleHeader == nullptr)
+    {
+        Log::err << "Error: sound sample header is not loaded! Cannot decode." <<
+            std::endl;
+        return false;
+    }
+
+    // Decode!
+    if(mSoundSampleHeader->encode == cStandardSoundHeaderEncode)
+    {
+        // For basic sounds, we don't have a number of channels; it is always 1.
+        return mDecoder->decode(mSoundSampleHeader->sampleArea, 1);
+    }
+
+    return mDecoder->decode(
+        mSoundSampleHeader->sampleArea,
+        mSoundSampleHeader->lengthOrChannels
+    );
 }
 
 // Finds first instance of cmdName, and returns entire command.
@@ -400,6 +427,16 @@ void SndFile::createDecompressionDecoder(const std::string& formatString,
     }
 }
 
+const SoundSampleHeader& SndFile::getSoundSampleHeader() const
+{
+    return *mSoundSampleHeader;
+}
+
+const Decoder& SndFile::getDecoder() const
+{
+    return *mDecoder;
+}
+
 // Print parsed data, for debugging.
 std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs)
 {
@@ -426,15 +463,5 @@ std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs)
     lhs << std::dec << std::setfill(' '); // Restore
 
     return lhs;
-}
-
-const SoundSampleHeader& SndFile::getSoundSampleHeader() const
-{
-    return *mSoundSampleHeader;
-}
-
-const Decoder& SndFile::getDecoder() const
-{
-    return *mDecoder;
 }
 

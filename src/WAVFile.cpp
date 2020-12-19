@@ -184,7 +184,7 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
     {
         // Do nothing, sample data already correctly encoded (plain PCM samples,
         // interleaved if stereo).
-        return sndHeader.sampleArea;
+        return sndFile.getDecoder().getLittleEndianData();
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
         // Compressed sound sample headers support uncompressed sound.
@@ -195,7 +195,7 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
         }
 
         // Decode!
-        const_cast<Decoder&>(sndFile.getDecoder()).decode(sndHeader.sampleArea, mHeader.numChannels);
+        //const_cast<Decoder&>(sndFile.getDecoder()).decode(sndHeader.sampleArea, mHeader.numChannels);
 
         return sndFile.getDecoder().getLittleEndianData();
     }

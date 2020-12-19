@@ -40,10 +40,13 @@ std::vector<std::int16_t> NullDecoder::bigDataTo16BitSamples(
         return samples;
     }
 
-    for(std::size_t i = 0; i < data.size(); i += 2)
+    for(std::size_t i = 0; i < data.size()/2; ++i)
     {
         // Because of << and &, this is platform-independant.
-        samples[i] = (data[i] << 8) & data[i+1];
+        std::uint16_t unsignedValue =
+            (static_cast<std::uint16_t>(data[i*2]) << 8) | data[i*2+1];
+
+        samples[i] = *reinterpret_cast<std::int16_t*>(&unsignedValue);
     }
 
     return samples;
@@ -82,6 +85,7 @@ bool NullDecoder::decode(const std::vector<std::uint8_t>& data,
         setLittleEndianData(
             bigDataTo16BitSamples(data)
         );
+        return true;
     }
 
     Log::err << "Error: " << mBitsPerSample << "-bit samples not supported " <<
