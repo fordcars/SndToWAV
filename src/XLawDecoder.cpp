@@ -1,3 +1,10 @@
+// a-law and mu-law decoder.
+// By jorio for Pomme (https://github.com/jorio/Pomme).
+// Modified by Carl Hewett for SndToWAV.
+
+// Original file: xlaw.cpp
+// (https://github.com/jorio/Pomme/blob/5fc6598b472b801e67a20f11336e2e308aac7787/src/Sound/xlaw.cpp)
+
 #include "XLawDecoder.hpp"
 #include <iostream>
 #include <cstddef> // For size_t

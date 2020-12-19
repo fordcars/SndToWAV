@@ -1,12 +1,3 @@
-// MACE 3:1 decoder.
-// Modified by Carl Hewett for SndToWAV.
-
-// Adapted by jorio for Pomme (https://github.com/jorio/Pomme)
-// Original file: MACE.cpp
-// (https://github.com/jorio/Pomme/blob/5fc6598b472b801e67a20f11336e2e308aac7787/src/Sound/MACE.cpp)
-
-// ---- Begin ffmpeg copyright notices ----
-
 /*
  * MACE decoder
  * Copyright (c) 2002 Laszlo Torok <torokl@alpha.dfmk.hu>
@@ -34,7 +25,8 @@
  * libavcodec api, context stuff, interlaced stereo out).
  */
 
-// ---- End ffmpeg copyright notices ----
+// Adapted by jorio for Pomme (https://github.com/jorio/Pomme).
+// Slightly modified by Carl Hewett for SndToWAV.
 
 #include "MACEDecoder.hpp"
 #include "Log.hpp"
