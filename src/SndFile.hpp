@@ -93,9 +93,9 @@ private:
         int compressionID);
 
 public:
-    static const unsigned char cStandardSoundHeaderEncode;
-    static const unsigned char cExtendedSoundHeaderEncode;
-    static const unsigned char cCompressedSoundHeaderEncode;
+    static const std::uint8_t cStandardSoundHeaderEncode;
+    static const std::uint8_t cExtendedSoundHeaderEncode;
+    static const std::uint8_t cCompressedSoundHeaderEncode;
 
     SndFile(std::istream& file, const std::string& fileName);
 

@@ -27,11 +27,14 @@
 #include <utility> // For std::move
 #include <stdexcept>
 
-const unsigned BUFFER_CMD = 0x8051; // bufferCmd with data offset bit.
+namespace
+{
+    const unsigned BUFFER_CMD = 0x8051; // bufferCmd with data offset bit.
+}
 
-const unsigned char SndFile::cStandardSoundHeaderEncode = 0x00;
-const unsigned char SndFile::cExtendedSoundHeaderEncode = 0xFF;
-const unsigned char SndFile::cCompressedSoundHeaderEncode = 0xFE;
+const std::uint8_t SndFile::cStandardSoundHeaderEncode = 0x00;
+const std::uint8_t SndFile::cExtendedSoundHeaderEncode = 0xFF;
+const std::uint8_t SndFile::cCompressedSoundHeaderEncode = 0xFE;
 
 SndFile::SndFile(std::istream& file, const std::string& fileName)
     : mFileName(fileName)
