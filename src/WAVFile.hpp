@@ -87,9 +87,8 @@ private:
     }
 
     bool populateHeader(const SndFile& sndFile);
-    void writeBinaryHeader(std::ostream& outputStream) const;
-    std::vector<std::uint8_t> decodeSampleData(const SndFile& sndFile) const;
-    bool writeSampleData(std::ostream& outputStream, const SndFile& sndFile) const;
+    void writeHeader(std::ostream& outputStream);
+    bool writeSampleData(std::ostream& outputStream, const SndFile& sndFile);
 
 public:
     WAVFile();

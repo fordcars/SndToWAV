@@ -129,7 +129,7 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
     return true;
 }
 
-void WAVFile::writeBinaryHeader(std::ostream& outputStream) const
+void WAVFile::writeHeader(std::ostream& outputStream)
 {
     writeLittleArray(outputStream, mHeader.chunkID, 4);
     writeLittleValue(outputStream, mHeader.chunkSize);
@@ -148,51 +148,11 @@ void WAVFile::writeBinaryHeader(std::ostream& outputStream) const
     writeLittleValue(outputStream, mHeader.subchunk2Size);
 }
 
-// We return unsigned bytes (plain data).
-// Inputted multi-byte samples must be in native-endianness, unless it is compressed data.
-// --- Compressed data must be in the original endianness.
-// Decoded multi-byte samples are in native-endianness.
-std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) const ///////////////////////TODO: Get rid of this function!
-{
-    // Could definitely do this cleaner.
-    const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
-    const CompressedSoundSampleHeader* cmpSndHeader = nullptr;
-
-    if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
-    {
-        cmpSndHeader = static_cast<const CompressedSoundSampleHeader*>(&sndHeader);
-    }
-
-    // Get that sample data!
-    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode ||
-        sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
-    {
-        // Do nothing, sample data already correctly encoded (plain PCM samples,
-        // interleaved if stereo).
-        return sndFile.getDecoder().getLittleEndianData();
-    } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
-    {
-        // Compressed sound sample headers support uncompressed sound.
-        if(cmpSndHeader->compressionID == 0)
-        {
-            // Uncompressed sound sample, so we do nothing!
-            return sndHeader.sampleArea;
-        }
-
-        // Decode!
-        //const_cast<Decoder&>(sndFile.getDecoder()).decode(sndHeader.sampleArea, mHeader.numChannels);
-
-        return sndFile.getDecoder().getLittleEndianData();
-    }
-
-    // If all else fails.
-    return sndHeader.sampleArea; 
-}
-
 // Returns true on success, false on failure.
-bool WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile) const
+bool WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile)
 {
-    std::vector<std::uint8_t> decodedSampleData = decodeSampleData(sndFile);
+    std::vector<std::uint8_t> decodedSampleData =
+        sndFile.getDecoder().getLittleEndianData();
 
     // We only support 8-bit or 16-bit samples.
     unsigned bytesPerSample = mHeader.bitsPerSample/8;
@@ -231,7 +191,7 @@ bool WAVFile::convertSnd(const SndFile& sndFile, const std::string& WAVFileName)
         return false;
     }
 
-    writeBinaryHeader(outputFile);
+    writeHeader(outputFile);
     writeSampleData(outputFile, sndFile);
 
     return true;
