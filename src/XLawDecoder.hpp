@@ -34,7 +34,7 @@ protected:
 
     unsigned getBitsPerSample() const override;
 
-    void decode(const std::vector<std::uint8_t>& data,
+    bool decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels, bool useULaw);
 };
 
@@ -42,7 +42,7 @@ class ALawDecoder : public XLawDecoder
 {
 public:
     ALawDecoder();
-    void decode(const std::vector<std::uint8_t>& data,
+    bool decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) override;
 };
 
@@ -51,7 +51,7 @@ class ULawDecoder : public XLawDecoder
 {
 public:
     ULawDecoder();
-    void decode(const std::vector<std::uint8_t>& data,
+    bool decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) override;
 };
 

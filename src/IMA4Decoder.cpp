@@ -178,7 +178,7 @@ unsigned IMA4Decoder::getBitsPerSample() const
 }
 
 // Decodes sound samples, and interleaves them if stereo.
-void IMA4Decoder::decode(const std::vector<std::uint8_t>& data,
+bool IMA4Decoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t numChannels)
 {
     std::vector<std::int16_t> decodedSamples;
@@ -197,7 +197,7 @@ void IMA4Decoder::decode(const std::vector<std::uint8_t>& data,
     {
         Log::err << "Error: invalid number of channels given (" << numChannels << "). " <<
             " Can only decode IMA4 with 1 (mono) or 2 (stereo) channels!" << std::endl;
-        return;
+        return false;
     }
 
     if(numChannels == 1)
@@ -228,5 +228,6 @@ void IMA4Decoder::decode(const std::vector<std::uint8_t>& data,
     }
 
     setLittleEndianData(decodedSamples);
+    return true;
 }
 

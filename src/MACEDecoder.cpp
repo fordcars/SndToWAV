@@ -1,3 +1,4 @@
+// MACE 3:1 decoder.
 // Modified by Carl Hewett for SndToWAV.
 
 // Adapted by jorio for Pomme (https://github.com/jorio/Pomme)
@@ -216,7 +217,7 @@ unsigned MACEDecoder::getBitsPerSample() const
 }
 
 // Decodes MACE 3:1 compressed sound only.
-void MACEDecoder::decode(const std::vector<std::uint8_t>& data,
+bool MACEDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t numChannels)
 {
     std::size_t nSamples = 3 * static_cast<int>(data.size());
@@ -225,7 +226,7 @@ void MACEDecoder::decode(const std::vector<std::uint8_t>& data,
     if(data.size() % (numChannels * 2) != 0)
     {
         Log::err << "Error: cannot decode MACE; input buffer has an odd length!" << std::endl;
-        return;
+        return false;
     }
 
     std::int16_t* out = decodedData.data();
@@ -253,4 +254,5 @@ void MACEDecoder::decode(const std::vector<std::uint8_t>& data,
 
     assert(out == decodedData.data() + decodedData.size());
     setLittleEndianData(decodedData);
+    return true;
 }

@@ -69,7 +69,7 @@ unsigned XLawDecoder::getBitsPerSample() const
     return 16;
 }
 
-void XLawDecoder::decode(const std::vector<std::uint8_t>& data,
+bool XLawDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t /* numChannels */, bool useULaw)
 {
     const std::int16_t* xLawToPCM = aLawToPCM; // Get correct table
@@ -92,6 +92,7 @@ void XLawDecoder::decode(const std::vector<std::uint8_t>& data,
     }
 
     setLittleEndianData(decodedSamples);
+    return true;
 }
 
 /* ALawDecoder */
@@ -100,10 +101,10 @@ ALawDecoder::ALawDecoder()
     // Do nothing
 }
 
-void ALawDecoder::decode(const std::vector<std::uint8_t>& data,
+bool ALawDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t numChannels)
 {
-    XLawDecoder::decode(data, numChannels, false);
+    return XLawDecoder::decode(data, numChannels, false);
 }
 
 /* ULawDecoder */
@@ -112,9 +113,9 @@ ULawDecoder::ULawDecoder()
     // Do nothing
 }
 
-void ULawDecoder::decode(const std::vector<std::uint8_t>& data,
+bool ULawDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t numChannels)
 {
-    XLawDecoder::decode(data, numChannels, true);
+    return XLawDecoder::decode(data, numChannels, true);
 }
 

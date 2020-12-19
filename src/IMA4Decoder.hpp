@@ -72,7 +72,7 @@ public:
 
     unsigned getBitsPerSample() const override;
 
-    void decode(const std::vector<std::uint8_t>& data,
+    bool decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) override;
 };
 

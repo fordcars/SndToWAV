@@ -46,7 +46,11 @@ public:
     // Bits per uncompressed sample.
     virtual unsigned getBitsPerSample() const = 0;
 
-    virtual void decode(const std::vector<std::uint8_t>& data,
+    // data is the raw data as found in the sound file.
+    // decode() must take into account the endianness of the inputted data, which in
+    // our case is always Big-endian.
+    // Returns true on success, false on failure.
+    virtual bool decode(const std::vector<std::uint8_t>& data,
         std::size_t numChannels) = 0;
 
     const std::vector<std::uint8_t> getLittleEndianData() const;

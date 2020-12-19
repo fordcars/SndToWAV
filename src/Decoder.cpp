@@ -22,7 +22,7 @@
 // std::vector<std::uint8_t> in little-endian.
 std::vector<uint8_t> Decoder::serializeToLittleEndian(const std::vector<std::int16_t>& data)
 {
-    std::vector<std::uint8_t> convertedData(data.size()*16/8);
+    std::vector<std::uint8_t> convertedData(data.size() * 16/8);
 
     for(std::size_t i = 0; i < data.size(); ++i)
     {
