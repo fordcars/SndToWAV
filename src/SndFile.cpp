@@ -25,6 +25,7 @@
 
 #include <iomanip>
 #include <utility> // For std::move
+#include <stdexcept>
 
 const unsigned BUFFER_CMD = 0x8051; // bufferCmd with data offset bit.
 
@@ -434,6 +435,12 @@ const SoundSampleHeader& SndFile::getSoundSampleHeader() const
 
 const Decoder& SndFile::getDecoder() const
 {
+    if(mDecoder == nullptr)
+    {
+        Log::err << "Error: cannot get decoder! It does not exist." << std::endl;
+        throw std::logic_error("Cannot get decoder; it does not exist.");
+    }
+
     return *mDecoder;
 }
 
