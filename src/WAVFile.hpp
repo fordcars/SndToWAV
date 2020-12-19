@@ -25,7 +25,6 @@
 
 #include "SndToWAV.hpp"
 
-class SndFile;
 class WAVHeader
 {
 public:
@@ -45,10 +44,11 @@ public:
 
     std::uint8_t subchunk2ID[4] = {'d','a','t','a'};
     std::uint32_t subchunk2Size = 0;
-
-    friend std::ostream& operator<<(std::ostream& lhs, const WAVHeader& rhs);
 };
 
+std::ostream& operator<<(std::ostream& lhs, const WAVHeader& rhs);
+
+class SndFile;
 class WAVFile
 {
 private:
