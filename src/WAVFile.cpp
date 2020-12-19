@@ -88,10 +88,10 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
         sampleDataSize = sndHeader.lengthOrChannels;
     } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
     {
-        sampleDataSize = extSndHeader->numFrames * 2 * sndHeader.lengthOrChannels;
+        sampleDataSize = extSndHeader->numFrames * 2 * sndHeader.lengthOrChannels;///////////TODO: get rid of this
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
-        sampleDataSize = cmpSndHeader->decoder->getDecodedSize(
+        sampleDataSize = sndFile.getDecoder().getDecodedSize(
             cmpSndHeader->numFrames * sndHeader.lengthOrChannels
         );
     }
@@ -123,12 +123,12 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
         bitsPerSample = 8;
     } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
     {
-        bitsPerSample = extSndHeader->sampleSize;
+        bitsPerSample = extSndHeader->sampleSize; ////////////////////////////////TODO: Get rid of this!
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
         // sampleSize for compressed sound headers literally make no sense,
         // so lets assume it instead.
-        bitsPerSample = cmpSndHeader->decoder->getBitsPerSample();
+        bitsPerSample = sndFile.getDecoder().getBitsPerSample();
     }
 
     mHeader.byteRate = mHeader.sampleRate * mHeader.numChannels * bitsPerSample/8;
@@ -167,7 +167,7 @@ void WAVFile::writeBinaryHeader(std::ostream& outputStream) const
 // Inputted multi-byte samples must be in native-endianness, unless it is compressed data.
 // --- Compressed data must be in the original endianness.
 // Decoded multi-byte samples are in native-endianness.
-std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) const
+std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) const ///////////////////////TODO: Get rid of this function!
 {
     // Could definitely do this cleaner.
     const SoundSampleHeader& sndHeader = sndFile.getSoundSampleHeader();
@@ -195,9 +195,9 @@ std::vector<std::uint8_t> WAVFile::decodeSampleData(const SndFile& sndFile) cons
         }
 
         // Decode!
-        cmpSndHeader->decoder->decode(sndHeader.sampleArea, mHeader.numChannels);
+        const_cast<Decoder&>(sndFile.getDecoder()).decode(sndHeader.sampleArea, mHeader.numChannels);
 
-        return cmpSndHeader->decoder->getLittleEndianData();
+        return sndFile.getDecoder().getLittleEndianData();
     }
 
     // If all else fails.
