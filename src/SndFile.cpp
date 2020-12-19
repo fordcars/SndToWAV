@@ -15,6 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with SndToWAV. If not, see <http://www.gnu.org/licenses/>.
 
+// Reference:
+// https://developer.apple.com/library/archive/documentation/mac/pdf/Sound/Sound_Manager.pdf
+
 #include "SndFile.hpp"
 #include "Log.hpp"
 
