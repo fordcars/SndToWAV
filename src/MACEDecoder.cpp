@@ -25,8 +25,14 @@
  * libavcodec api, context stuff, interlaced stereo out).
  */
 
+
 // Adapted by jorio for Pomme (https://github.com/jorio/Pomme).
 // Slightly modified by Carl Hewett for SndToWAV.
+
+// This class decodes MACE 3:1 sounds.
+// Important note:
+//   - MACE would normally decode into 8-bit sound samples. However,
+//     this implementation of the algorithm decodes into 16-bit samples.
 
 #include "MACEDecoder.hpp"
 #include "Log.hpp"
@@ -199,16 +205,20 @@ std::size_t MACEDecoder::getEncodedSize(std::size_t numPackets) const
 
 std::size_t MACEDecoder::getDecodedSize(std::size_t numPackets) const
 {
-    // 6x 8-bit samples per packet.
-    return numPackets * 6 * 1;
+    // 6x 16-bit samples per packet.
+    // Normally, MACE would output 6x 8-bit samples, but this algorithm
+    // outputs 6x 16-bit samples instead.
+    return numPackets * 6 * 2;
 }
 
 unsigned MACEDecoder::getBitsPerSample() const
 {
-    return 8;
+    // This algorithm outputs 16-bit samples.
+    return 16;
 }
 
 // Decodes MACE 3:1 compressed sound only.
+// Decodes into 16-bit samples!
 bool MACEDecoder::decode(const std::vector<std::uint8_t>& data,
     std::size_t numChannels)
 {
@@ -246,8 +256,7 @@ bool MACEDecoder::decode(const std::vector<std::uint8_t>& data,
 
     assert(out == decodedData.data() + decodedData.size());
 
-    // Each decodedData contains two 8-bit samples in native-endianness.
-    // Don't ask me why, I didn't write the algo!
+    // 16-bit samples.
     setLittleEndianData(decodedData);
     return true;
 }
