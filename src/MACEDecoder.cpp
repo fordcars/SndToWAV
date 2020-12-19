@@ -253,6 +253,9 @@ bool MACEDecoder::decode(const std::vector<std::uint8_t>& data,
     }
 
     assert(out == decodedData.data() + decodedData.size());
+
+    // Each decodedData contains two 8-bit samples in native-endianness.
+    // Don't ask me why, I didn't write the algo.
     setLittleEndianData(decodedData);
     return true;
 }

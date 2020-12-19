@@ -82,21 +82,19 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
         cmpSndHeader = static_cast<const CompressedSoundSampleHeader*>(&sndHeader);
     }
 
-    std::size_t sampleDataSize = 0;
+    std::size_t numPackets = 0;
     if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode)
     {
-        sampleDataSize = sndHeader.lengthOrChannels;
+        numPackets = sndHeader.lengthOrChannels;
     } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
     {
-        sampleDataSize = extSndHeader->numFrames * 2 * sndHeader.lengthOrChannels;///////////TODO: get rid of this
+        numPackets = extSndHeader->numFrames * sndHeader.lengthOrChannels;
     } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
     {
-        sampleDataSize = sndFile.getDecoder().getDecodedSize(
-            cmpSndHeader->numFrames * sndHeader.lengthOrChannels
-        );
+        numPackets = cmpSndHeader->numFrames * sndHeader.lengthOrChannels;
     }
 
-    mHeader.chunkSize = 36 + sampleDataSize;
+    mHeader.chunkSize = 36 + sndFile.getDecoder().getDecodedSize(numPackets);
 
     // "fmt " //
     mHeader.subchunk1Size = 16;
@@ -104,7 +102,8 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
 
     if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode)
     {
-        mHeader.numChannels = 1; // Only mono supported.
+        // Basic sounds only support mono.
+        mHeader.numChannels = 1;
     } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode ||
         sndHeader.encode == SndFile::cCompressedSoundHeaderEncode )
     {
@@ -115,28 +114,14 @@ bool WAVFile::populateHeader(const SndFile& sndFile)
     // We only keep the integer part!
     mHeader.sampleRate = sndHeader.sampleRate >> 16;
 
-    unsigned bitsPerSample = 0;
-
-    if(sndHeader.encode == SndFile::cStandardSoundHeaderEncode)
-    {
-        // For standard sound headers, samples are always 8-bit.
-        bitsPerSample = 8;
-    } else if(sndHeader.encode == SndFile::cExtendedSoundHeaderEncode)
-    {
-        bitsPerSample = extSndHeader->sampleSize; ////////////////////////////////TODO: Get rid of this!
-    } else if(sndHeader.encode == SndFile::cCompressedSoundHeaderEncode)
-    {
-        // sampleSize for compressed sound headers literally make no sense,
-        // so lets assume it instead.
-        bitsPerSample = sndFile.getDecoder().getBitsPerSample();
-    }
+    unsigned bitsPerSample = sndFile.getDecoder().getBitsPerSample();
 
     mHeader.byteRate = mHeader.sampleRate * mHeader.numChannels * bitsPerSample/8;
     mHeader.blockAlign = mHeader.numChannels * bitsPerSample/8;
     mHeader.bitsPerSample = bitsPerSample;
 
     // "data" //
-    mHeader.subchunk2Size = sampleDataSize;
+    mHeader.subchunk2Size = sndFile.getDecoder().getDecodedSize(numPackets);
 
     // Debug info.
     Log::verb << mHeader << std::endl;
