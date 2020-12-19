@@ -23,11 +23,12 @@
  * Adapted to libavcodec by Francois Revol <revol@free.fr>
  * (removed 68k REG stuff, changed types, added some statics and consts,
  * libavcodec api, context stuff, interlaced stereo out).
+ *
+ * Adapted by Iliyas Jorio for Pomme (https://github.com/jorio/Pomme).
+ *
+ * Adapted by Carl Hewett for SndToWAV (https://github.com/fordcars/SndToWAV).
+ * - Modified methods' interfaces and changed some types.
  */
-
-
-// Adapted by jorio for Pomme (https://github.com/jorio/Pomme).
-// Slightly modified by Carl Hewett for SndToWAV.
 
 // This class decodes MACE 3:1 sounds.
 // Important note:
