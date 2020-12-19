@@ -170,8 +170,9 @@ bool WAVFile::writeSampleData(std::ostream& outputStream, const SndFile& sndFile
         return true;
     }
 
-    Log::err << "Error: sound sample is " << mHeader.bitsPerSample << "-bit, when " <<
-        "the only supported formats are 8-bit and 16-bit sound samples." << std::endl;
+    Log::err << "Error: cannot write sample data; sound sample is " <<
+        mHeader.bitsPerSample << "-bit, when only 8-bit and 16-bit samples " <<
+        "are supported." << std::endl;
     return false;
 }
 
