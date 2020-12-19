@@ -4,7 +4,7 @@ A utility to convert `'snd '` Apple Sound Manager sounds to WAV.
 # Features
 * Easily extract sound samples from `.rsrc` files.
 * Supports all sound header formats.
-* Supports IMA4 and MACE 3:1 compression.
+* Supports IMA4, MACE 3:1, μ-law and a-law compression.
 * (Should be) platform independent.
 
 # Limitations
@@ -46,3 +46,4 @@ The executable will be in the `bin` directory.
 
 # Additional credits
 * [jorio](https://github.com/jorio) and [ffmpeg](https://ffmpeg.org/) for MACE decoding.
+* [jorio](https://github.com/jorio) for μ-law and a-law decoding.
