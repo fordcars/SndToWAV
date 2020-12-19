@@ -29,11 +29,11 @@
 #include <vector>
 #include <memory>
 
-class SoundSampleHeader
+class SoundSampleHeader//////////////////////TODO: Make spearate file
 {
 public:
     virtual ~SoundSampleHeader() = default;
-    friend std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs);
+    virtual void print(std::ostream& stream) const;
 
     std::uint32_t samplePtr = 0;
     std::int32_t lengthOrChannels = 0; // Number of samples or number of channels (for compressed)
@@ -53,7 +53,7 @@ public:
     ExtendedSoundSampleHeader(const SoundSampleHeader& soundSampleHeader)
         : SoundSampleHeader(soundSampleHeader) {};
 
-    friend std::ostream& operator<<(std::ostream& lhs, const ExtendedSoundSampleHeader& rhs);
+    virtual void print(std::ostream& stream) const;
 
     std::int32_t numFrames = 0;
     // 80-bit extended value.
@@ -78,7 +78,7 @@ public:
     CompressedSoundSampleHeader(const SoundSampleHeader& soundSampleHeader)
         : SoundSampleHeader(soundSampleHeader) {};
 
-    friend std::ostream& operator<<(std::ostream& lhs, const CompressedSoundSampleHeader& rhs);
+    virtual void print(std::ostream& stream) const;
 
     std::int32_t numFrames = 0;
     // 80-bit extended value.
@@ -96,17 +96,14 @@ public:
     std::int16_t packetSize = 0;
     std::int16_t snthID = 0;
     std::int16_t sampleSize = 0;
-
-    std::unique_ptr<Decoder> decoder; // Polymorphic
-
-    void createDecoder();
 };
+
+std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs);
 
 class SndFile
 {
 private:
-
-    // Safe endian.
+    // Will return native-endian value.
     // bigStream is a Big-endian input stream.
     template<class T>
     static T readBigValue(std::istream& bigStream)
@@ -116,7 +113,7 @@ private:
         return SndToWAV::makeBigEndianNative(readBigValue);
     }
 
-    // Safe endian.
+    // Will return native-endian value.
     // bigStream is a Big-endian input stream.
     // Only reads length bytes as LSBs, fills rest (MSBs) with 0s.
     template<class T>
@@ -128,7 +125,7 @@ private:
         return SndToWAV::makeBigEndianNative(readBigValue);
     }
 
-    // Safe endian.
+    // Will return native-endian values.
     // bigStream is a Big-endian input stream.
     template<class T>
     static void readBigArray(std::istream& bigStream, T* buffer, std::size_t length)
@@ -151,6 +148,7 @@ private:
     std::vector<std::uint64_t> mSoundCommands;
 
     std::unique_ptr<SoundSampleHeader> mSoundSampleHeader;
+    std::unique_ptr<Decoder> mDecoder;
 
     std::vector<std::uint64_t> mSoundData; // Filled when interpreting bufferCmd.
 
@@ -158,10 +156,10 @@ private:
     std::uint64_t findSoundCommand(std::uint16_t cmdName) const;
     bool doBufferCommand(std::uint64_t command);
 
-    static void readSoundSampleData(std::istream& stream, std::vector<std::uint8_t>& buffer,
-        std::size_t sampleLength, unsigned bytesPerSample);
-
-    bool loadSoundSampleHeader(std::uint16_t offset);
+    bool loadSoundSampleHeader(std::size_t offset);
+    void loadSampleData(std::size_t offset, std::size_t sampleDataLength);
+    void createDecompressionDecoder(const std::string& compressionFormatString,
+        int compressionID);
 
     friend std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs);
 
@@ -173,6 +171,7 @@ public:
     SndFile(std::istream& file, const std::string& fileName);
 
     const SoundSampleHeader& getSoundSampleHeader() const;
+    const Decoder& getDecoder() const;
 };
 
 #endif // SND_FILE_HPP

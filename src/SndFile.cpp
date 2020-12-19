@@ -18,6 +18,7 @@
 #include "SndFile.hpp"
 #include "Log.hpp"
 
+#include "NullDecoder.hpp"
 #include "MACEDecoder.hpp"
 #include "IMA4Decoder.hpp"
 #include "XLawDecoder.hpp"
@@ -41,123 +42,93 @@ const unsigned char SndFile::cStandardSoundHeaderEncode = 0x00;
 const unsigned char SndFile::cExtendedSoundHeaderEncode = 0xFF;
 const unsigned char SndFile::cCompressedSoundHeaderEncode = 0xFE;
 
-std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs)
+void SoundSampleHeader::print(std::ostream& stream) const
 {
-    lhs << std::setfill('0'); // For hex values
+    stream << std::setfill('0'); // For hex values
 
-    lhs <<
+    stream <<
         "Base sound sample header: " << std::endl <<
         " -- Sample pointer: " << "0x" << std::setw(8) <<
-            std::hex << rhs.samplePtr << std::endl <<
+            std::hex << samplePtr << std::endl <<
 
-        " -- Length or num. channels: " << std::dec << rhs.lengthOrChannels << std::endl <<
-        " -- Total sample area size: " << rhs.sampleArea.size() << std::endl <<
+        " -- Length or num. channels: " << std::dec << lengthOrChannels << std::endl <<
+        " -- Total sample area size: " << sampleArea.size() << std::endl <<
         " -- Sample rate: " << "0x" << std::setw(8) << std::hex <<
-            rhs.sampleRate << std::dec << " (" << fixedSampleRateToFloat(rhs.sampleRate) <<
+            sampleRate << std::dec << " (" << fixedSampleRateToFloat(sampleRate) <<
             " Hz)" << std::endl <<
 
         " -- Loop start: " << "0x" << std::setw(8) << std::hex <<
-            rhs.loopStart  << std::endl <<
-        " -- Loop end: " << "0x" << std::setw(8) << rhs.loopEnd << std::endl <<
+            loopStart  << std::endl <<
+        " -- Loop end: " << "0x" << std::setw(8) << loopEnd << std::endl <<
         " -- Encoding: " << "0x" << std::setw(2) <<
-            static_cast<unsigned>(rhs.encode) << std::endl <<
+            static_cast<unsigned>(encode) << std::endl <<
 
         " -- Base frequency: " << "0x" << std::setw(2) << 
-            static_cast<unsigned>(rhs.baseFrequency);
+            static_cast<unsigned>(baseFrequency);
 
-    lhs << std::dec << std::setfill(' '); // Restore
-    return lhs;
+    stream << std::dec << std::setfill(' '); // Restore stream
 }
 
-std::ostream& operator<<(std::ostream& lhs, const ExtendedSoundSampleHeader& rhs)
+void ExtendedSoundSampleHeader::print(std::ostream& stream) const
 {
-    lhs << static_cast<const SoundSampleHeader&>(rhs) << std::endl; // Print base class.
+    SoundSampleHeader::print(stream); // Print base class
 
-    lhs << std::setfill('0'); // For hex values
-    lhs <<
+    stream << std::setfill('0'); // For hex values
+    stream << std::endl <<
         "Extended sound sample header (0xff): " << std::endl <<
-        " -- Number of frames: " << rhs.numFrames << std::endl <<
+        " -- Number of frames: " << numFrames << std::endl <<
 
         // Array in big-endian!
-        " -- AIFFSampleRate: " << "0x" << std::hex << std::setw(4) << rhs.AIFFSampleRate[0] <<
-            std::setw(8) << rhs.AIFFSampleRate[1] << std::setw(8) << rhs.AIFFSampleRate[2] <<
+        " -- AIFFSampleRate: " << "0x" << std::hex << std::setw(4) << AIFFSampleRate[0] <<
+            std::setw(8) << AIFFSampleRate[1] << std::setw(8) << AIFFSampleRate[2] <<
             std::endl <<
 
-        " -- Marker chunk pointer: " << "0x" << std::setw(8) << rhs.markerChunk << std::endl <<
+        " -- Marker chunk pointer: " << "0x" << std::setw(8) << markerChunk << std::endl <<
         " -- Instrument chunks pointer: " << "0x" << std::setw(8) <<
-            rhs.instrumentChunks << std::endl <<
-        " -- AES Recording pointer: " << "0x" << std::setw(8) <<rhs.AESRecording << std::endl <<
-        " -- Sample size: " << std::dec << rhs.sampleSize << std::endl <<
-        " -- Future use (1): " << "0x" << std::hex << std::setw(4) << rhs.futureUse1 << std::endl <<
-        " -- Future use (2): " << "0x" << std::setw(8) << rhs.futureUse2 << std::endl <<
-        " -- Future use (3): " << "0x" << std::setw(8) << rhs.futureUse3 << std::endl <<
-        " -- Future use (4): " << "0x" << std::setw(8) << rhs.futureUse4;
+            instrumentChunks << std::endl <<
+        " -- AES Recording pointer: " << "0x" << std::setw(8) << AESRecording << std::endl <<
+        " -- Sample size: " << std::dec << sampleSize << std::endl <<
+        " -- Future use (1): " << "0x" << std::hex << std::setw(4) << futureUse1 << std::endl <<
+        " -- Future use (2): " << "0x" << std::setw(8) << futureUse2 << std::endl <<
+        " -- Future use (3): " << "0x" << std::setw(8) << futureUse3 << std::endl <<
+        " -- Future use (4): " << "0x" << std::setw(8) << futureUse4;
 
-    lhs << std::dec << std::setfill(' '); // Restore
-
-    return lhs;
+    stream << std::dec << std::setfill(' '); // Restore stream
 }
 
-std::ostream& operator<<(std::ostream& lhs, const CompressedSoundSampleHeader& rhs)
+void CompressedSoundSampleHeader::print(std::ostream& stream) const
 {
-    lhs << static_cast<const SoundSampleHeader&>(rhs) << std::endl; // Print base class.
+    SoundSampleHeader::print(stream); // Print base class
 
-    lhs << std::setfill('0'); // For hex values
-    lhs << "Compressed sound sample header (0xfe): " << std::endl <<
-        " -- Number of frames: " << rhs.numFrames << std::endl <<
+    stream << std::setfill('0'); // For hex values
+    stream << std::endl <<
+        "Compressed sound sample header (0xfe): " << std::endl <<
+        " -- Number of frames: " << numFrames << std::endl <<
 
         // Array in big-endian
-        " -- AIFFSampleRate: " << "0x" << std::hex << std::setw(4) <<rhs.AIFFSampleRate[0] <<
-            std::setw(8) << rhs.AIFFSampleRate[1] << std::setw(8) << rhs.AIFFSampleRate[2] <<
+        " -- AIFFSampleRate: " << "0x" << std::hex << std::setw(4) <<AIFFSampleRate[0] <<
+            std::setw(8) << AIFFSampleRate[1] << std::setw(8) << AIFFSampleRate[2] <<
             std::endl <<
 
-        " -- Marker chunk pointer: " << "0x" << std::setw(8) << rhs.markerChunk << std::endl <<
-        " -- Format: " << std::string(reinterpret_cast<const char*>(rhs.format), 4) << std::endl <<
-        " -- Future use (2): " << "0x" << std::setw(8) <<rhs.futureUse2 << std::endl <<
-        " -- State vars pointer: " << "0x" << std::setw(8) <<rhs.stateVars << std::endl <<
-        " -- Leftover samples pointer: " << "0x" << std::setw(8) << rhs.leftOverSamples << std::endl <<
-        " -- Compression ID: " << std::dec << rhs.compressionID << std::endl <<
+        " -- Marker chunk pointer: " << "0x" << std::setw(8) << markerChunk << std::endl <<
+        " -- Format: " << std::string(reinterpret_cast<const char*>(format), 4) << std::endl <<
+        " -- Future use (2): " << "0x" << std::setw(8) << futureUse2 << std::endl <<
+        " -- State vars pointer: " << "0x" << std::setw(8) << stateVars << std::endl <<
+        " -- Leftover samples pointer: " << "0x" << std::setw(8) << leftOverSamples << std::endl <<
+        " -- Compression ID: " << std::dec << compressionID << std::endl <<
 
-        " -- Packet size: " << rhs.packetSize << std::endl <<
+        " -- Packet size: " << packetSize << std::endl <<
         " -- Snth ID: " << "0x" << std::setw(4) <<
-            std::hex << rhs.snthID << std::endl <<
-        " -- Sample size: " << std::dec << rhs.sampleSize;
+            std::hex << snthID << std::endl <<
+        " -- Sample size: " << std::dec << sampleSize;
 
-    lhs << std::dec << std::setfill(' '); // Restore
-
-    return lhs;
+    stream << std::dec << std::setfill(' '); // Restore stream
 }
 
-// Creates appropriate decoder using the currently loaded header information.
-void CompressedSoundSampleHeader::createDecoder()
+std::ostream& operator<<(std::ostream& lhs, const SoundSampleHeader& rhs)
 {
-    std::string formatString =
-        std::string(reinterpret_cast<const char*>(this->format), 4);
-
-    if(this->compressionID == 3 ||
-       formatString == "mac3" ||
-       formatString == "MAC3")
-    {
-        this->decoder = std::unique_ptr<Decoder>(new MACEDecoder());
-    } else if(formatString == "ima4" || formatString == "IMA4")
-    {
-        this->decoder = std::unique_ptr<Decoder>(new IMA4Decoder());
-    } else if(formatString == "alaw" || formatString == "ALAW")
-    {
-        this->decoder = std::unique_ptr<Decoder>(new ALawDecoder());
-    } else if(formatString == "ulaw" || formatString == "ULAW")
-    {
-        this->decoder = std::unique_ptr<Decoder>(new ULawDecoder());
-    } else if(this->compressionID == 0)
-    {
-        // Uncompressed sound using the compressed sound header;
-        // no need to create a decoder.
-    } else
-    {
-        Log::err << "Error: cannot create decoder! " <<
-            "Unsupported compression format: '" << formatString << "' (ID: " <<
-            this->compressionID << ")." << std::endl;
-    }
+    rhs.print(lhs);
+    return lhs;
 }
 
 SndFile::SndFile(std::istream& file, const std::string& fileName)
@@ -268,42 +239,14 @@ bool SndFile::doBufferCommand(std::uint64_t command)
     return true;
 }
 
-const SoundSampleHeader& SndFile::getSoundSampleHeader() const
-{
-    return *mSoundSampleHeader;
-}
-
-// Static.
-// Reads sound sample data from current position in stream.
-// sampleLength in bytes.
-void SndFile::readSoundSampleData(std::istream& stream, std::vector<std::uint8_t>& buffer,
-        std::size_t sampleLength, unsigned bytesPerValue)
-{
-    // In bytes, since we are always dealing with a uint8_t vector.
-    buffer.resize(sampleLength);
-
-    // Snd only supports 8-bit or 16-bit samples (I think).
-    if(bytesPerValue == 1)
-    {
-        readBigArray(stream, buffer.data(), sampleLength);
-    } else if(bytesPerValue == 2)
-    {
-        // If we have 2 bytes per sample, we must make sure we convert
-        // them to native endianness!
-        // Note: 16-bit samples are normally signed, but that doesn't
-        // change anything here.
-        readBigArray(stream,
-            reinterpret_cast<std::uint16_t*>(buffer.data()),
-            sampleLength / bytesPerValue);
-    }
-}
-
 // Offset from beginning of file, must be in native endianness.
 // Returns true on success, false on failure.
-bool SndFile::loadSoundSampleHeader(std::uint16_t offset)
+bool SndFile::loadSoundSampleHeader(std::size_t offset)
 {
     // All headers are derived from the standard header.
     std::unique_ptr<SoundSampleHeader> standardHeader(new SoundSampleHeader());
+    std::size_t sampleDataSize = 0; // In bytes.
+
     mFile.seekg(offset, mFile.beg);
 
     standardHeader->samplePtr = readBigValue<decltype(standardHeader->samplePtr)>(mFile);
@@ -324,15 +267,11 @@ bool SndFile::loadSoundSampleHeader(std::uint16_t offset)
 
     if(standardHeader->encode == cStandardSoundHeaderEncode)
     {
-        // Standard sound files always have 1 byte/sample.
-        readSoundSampleData(mFile, standardHeader->sampleArea,
-            standardHeader->lengthOrChannels, 1);
-
-        // Debugging info.
-        Log::verb << *standardHeader << std::endl;
+        // Standard header sounds are always 8-bit.
+        mDecoder = std::unique_ptr<Decoder>(new NullDecoder(8));
+        sampleDataSize = standardHeader->lengthOrChannels;
 
         mSoundSampleHeader = std::move(standardHeader);
-        return true;
     } else if(standardHeader->encode == cExtendedSoundHeaderEncode)
     {
         // Extended sound header.
@@ -354,21 +293,15 @@ bool SndFile::loadSoundSampleHeader(std::uint16_t offset)
         extendedHeader->futureUse3 = readBigValue<decltype(extendedHeader->futureUse3)>(mFile);
         extendedHeader->futureUse4 = readBigValue<decltype(extendedHeader->futureUse4)>(mFile);
 
-        // Copy sample data.
-        // Length (bytes) = numFrames * sampleSize/8 * number of channels (lengthOrChannels)
-        std::size_t sampleLength =
-            extendedHeader->numFrames *
-            extendedHeader->sampleSize/8 *
-            extendedHeader->lengthOrChannels;
+        // Create decoder.
+        mDecoder = std::unique_ptr<Decoder>(new NullDecoder(extendedHeader->sampleSize));
 
-        readSoundSampleData(mFile, extendedHeader->sampleArea, sampleLength,
-            extendedHeader->sampleSize/8);
-
-        // Debug info.
-        Log::verb << *extendedHeader << std::endl;
+        // numPackets = numSamples = numFrames * numChannels.
+        sampleDataSize = mDecoder->getEncodedSize(
+                extendedHeader->numFrames * extendedHeader->lengthOrChannels
+        );
 
         mSoundSampleHeader = std::move(extendedHeader);
-        return true;
     } else if(standardHeader->encode == cCompressedSoundHeaderEncode)
     {
         // Compressed sound header
@@ -391,30 +324,80 @@ bool SndFile::loadSoundSampleHeader(std::uint16_t offset)
         compressedHeader->snthID = readBigValue<decltype(compressedHeader->snthID)>(mFile);
         compressedHeader->sampleSize = readBigValue<decltype(compressedHeader->sampleSize)>(mFile);
 
-        compressedHeader->createDecoder();
+        // Create decoder.
+        if(compressedHeader->compressionID == 0)
+        {
+            // Uncompressed sound using compressed sound header.
+            mDecoder = std::unique_ptr<Decoder>(new NullDecoder(compressedHeader->sampleSize));
+        } else
+        {
+            std::string formatString =
+                std::string(reinterpret_cast<const char*>(compressedHeader->format), 4);
+            createDecompressionDecoder(formatString, compressedHeader->compressionID);
+        }
 
-        // Copy sample data.
         // numFrames is the number of packet frames, not sample frames.
         // So, numFrames * numChannels = numPackets.
-        std::size_t sampleLength = compressedHeader->decoder->getEncodedSize(
+        sampleDataSize = mDecoder->getEncodedSize(
                 compressedHeader->numFrames * compressedHeader->lengthOrChannels
         );
 
-        // Read values as bytes, since we only figure out endianness when
-        // decoding compressed data.
-        readSoundSampleData(mFile, compressedHeader->sampleArea, sampleLength, 1);
-
-        // Debug info.
-        Log::verb << *compressedHeader << std::endl;
-
         mSoundSampleHeader = std::move(compressedHeader);
-        return true;
+    } else
+    {
+        Log::err << "Error: unrecognized sound sampler header encoding! Cannot convert." <<
+            std::endl;
+        mSoundSampleHeader = std::move(standardHeader);
+        return false;
     }
 
-    Log::err << "Error: unrecognized sound sampler header encoding! Cannot convert." <<
-        std::endl;
-    mSoundSampleHeader = std::move(standardHeader);
-    return false;
+    // Load sample data.
+    loadSampleData(mFile.tellg(), sampleDataSize);
+
+    // Debugging info.
+    Log::verb << *mSoundSampleHeader << std::endl;
+
+    return true;
+}
+
+// Offset is from beginning of file.
+// Sample data length in bytes.
+void SndFile::loadSampleData(std::size_t offset, std::size_t sampleDataLength)
+{
+    mFile.seekg(offset, mFile.beg);
+
+    // Resize sample area.
+    mSoundSampleHeader->sampleArea.resize(sampleDataLength);
+    readBigArray<std::uint8_t>(
+        mFile,
+        mSoundSampleHeader->sampleArea.data(),
+        sampleDataLength
+    );
+}
+
+void SndFile::createDecompressionDecoder(const std::string& formatString,
+    int compressionID)
+{
+    if(compressionID == 3 ||
+       formatString == "mac3" ||
+       formatString == "MAC3")
+    {
+        mDecoder = std::unique_ptr<Decoder>(new MACEDecoder());
+    } else if(formatString == "ima4" || formatString == "IMA4")
+    {
+        mDecoder = std::unique_ptr<Decoder>(new IMA4Decoder());
+    } else if(formatString == "alaw" || formatString == "ALAW")
+    {
+        mDecoder = std::unique_ptr<Decoder>(new ALawDecoder());
+    } else if(formatString == "ulaw" || formatString == "ULAW")
+    {
+        mDecoder = std::unique_ptr<Decoder>(new ULawDecoder());
+    } else
+    {
+        Log::err << "Error: cannot create decoder! " <<
+            "Unsupported compression format: '" << formatString <<
+            "' (ID: " << compressionID << ")." << std::endl;
+    }
 }
 
 // Print parsed data, for debugging.
@@ -444,3 +427,14 @@ std::ostream& operator<<(std::ostream& lhs, const SndFile& rhs)
 
     return lhs;
 }
+
+const SoundSampleHeader& SndFile::getSoundSampleHeader() const
+{
+    return *mSoundSampleHeader;
+}
+
+const Decoder& SndFile::getDecoder() const
+{
+    return *mDecoder;
+}
+
